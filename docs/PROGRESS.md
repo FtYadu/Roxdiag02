@@ -9,7 +9,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P1 | `Rox.Transport` — ITransport, loopback, DoIP sim + state machine, ISO-TP, vendor adapters, executor adapter | ✅ |
 | P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ✅ |
 | P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ✅ |
-| P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ⬜ |
+| P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ✅ |
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ⬜ |
 | P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ⬜ |
 | P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ⬜ |
@@ -84,6 +84,23 @@ surfaced without hammering; session-change NRC retried; session tracking; keep-a
 
 Tests (4 new, 29 total green): decode + descriptions; read→clear→read-back live/stale split;
 clear-rejection NRC surfacing; all-ECU aggregate.
+
+## P4 — Security provider ✅
+
+`Rox.Security` (net8.0):
+
+- `NativeSeedKeyProvider : ISecurityProvider` — loads the operator's licensed module via
+  `NativeLibrary` + a Cdecl `ComputeKey(seed, seedLen, keyBuf, cap)` export. **No OEM algorithm in the app.**
+- `ManualKeyProvider` — offline manual-key fallback (FR-06.5); `SecurityModuleTester` self-test (FR-06.2).
+- `SecurityAccessService` — full 0x27 handshake (request seed → module → send key), per-session grant
+  cache (FR-06.3), lockout back-off on 0x36/0x37 that prevents hammering (FR-06.4), all-zero-seed =
+  already-unlocked convention; typed `SecurityAccessResult` with plain-language NRC.
+- DPAPI: `DpapiSecretProtector` (Windows) + `ProtectedValueStore` for the module path/licence;
+  clearly-labelled non-secure passthrough on non-Windows for dev/CI only.
+
+Tests (8 new, 37 total green): grant against sim; session cache; wrong key → invalid; 0x36 lockout
+surfaced + no hammering; missing module handled; manual provider; DPAPI store round-trip; **and a real
+native `.so` compiled at runtime driving the full handshake through the P/Invoke path**.
 
 ## Read-only foundation (do not rewrite)
 

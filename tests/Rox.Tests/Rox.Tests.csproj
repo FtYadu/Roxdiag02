@@ -16,5 +16,6 @@
     <ProjectReference Include="../../src/Rox.Transport/Rox.Transport.csproj" />
     <ProjectReference Include="../../src/Rox.Uds/Rox.Uds.csproj" />
     <ProjectReference Include="../../src/Rox.Diagnostics/Rox.Diagnostics.csproj" />
+    <ProjectReference Include="../../src/Rox.Security/Rox.Security.csproj" />
   </ItemGroup>
 </Project>
