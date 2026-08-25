@@ -1,0 +1,36 @@
+<UserControl x:Class="Rox.App.Views.ExpertConsoleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <TextBlock Grid.Row="0" Text="Expert Console — raw UDS" FontSize="24" FontWeight="Bold" Margin="0,0,0,12" />
+
+    <WrapPanel Grid.Row="1" Margin="0,0,0,8">
+      <TextBlock Text="Request (hex):" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <TextBox Width="360" Text="{Binding RequestHex, UpdateSourceTrigger=PropertyChanged}"
+               FontFamily="Cascadia Mono,Consolas" Margin="0,0,8,0" />
+      <Button Content="Send" Command="{Binding SendCommand}" Margin="0,0,8,0" />
+      <Button Content="Clear trace" Command="{Binding ClearTraceCommand}" />
+    </WrapPanel>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Text="Response: " Opacity="0.7" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding LastResponse}" FontFamily="Cascadia Mono,Consolas" VerticalAlignment="Center" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border Grid.Row="3" CornerRadius="6" Padding="8" Background="{DynamicResource ControlFillColorDefaultBrush}">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Live trace" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding Trace}" FontFamily="Cascadia Mono,Consolas" FontSize="12"
+                 Background="Transparent" BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1,0 +1,31 @@
+<!-- Illustrative flow (reconstructed request-side names, PRD O-1). VIN write via 0x2E DID F190.
+     Irreversible write: the app requires confirmation + audit before executing. -->
+<FlowConfiguration>
+  <Processes>
+    <Process Name="Write VIN" Description="Write the vehicle VIN (DID 0xF190)">
+      <ChildStep>
+        <EcuService Ecu="CCU">
+          <Request Service="0x10" Sub="0x03"/>
+          <ChildStep><If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If></ChildStep>
+        </EcuService>
+      </ChildStep>
+      <SecurityAccess Ecu="CCU" SeedSub="0x01" KeySub="0x02"/>
+      <UserPrompt Message="Confirm the VIN to be written matches the vehicle." Timeout="0"/>
+      <EcuService Ecu="CCU">
+        <Request Service="0x2E"><Data IsVariable="false" Value="F190"/><Data IsVariable="true" Value="vin"/></Request>
+        <ChildStep><If Description="null"><Condition><OneCondition>
+          <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+          <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+        </OneCondition></Condition></If></ChildStep>
+      </EcuService>
+      <EcuService Ecu="CCU">
+        <Request Service="0x22"><Data IsVariable="false" Value="F190"/></Request>
+        <ChildStep><Assign Var="vinReadback" From="response[3..20]"/></ChildStep>
+      </EcuService>
+      <EcuService Ecu="CCU"><Request Service="0x10" Sub="0x01"/></EcuService>
+    </Process>
+  </Processes>
+</FlowConfiguration>

@@ -1,0 +1,35 @@
+<!-- Illustrative flow mirroring the observed FlowConfiguration schema. The <Request> element is the
+     reconstructed request-side adapter point (PRD §5.2 / O-1); names here are placeholders until a
+     complete OEM flow file confirms them. Security is gated on 67 <even>. -->
+<FlowConfiguration>
+  <Processes>
+    <Process Name="Delete Key" Description="Remove a learned key from the immobilizer">
+      <ChildStep>
+        <EcuService Ecu="IMMO">
+          <Request Service="0x10" Sub="0x03"/>
+          <ChildStep><If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If></ChildStep>
+        </EcuService>
+      </ChildStep>
+      <SecurityAccess Ecu="IMMO" SeedSub="0x01" KeySub="0x02"/>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x22"><Data IsVariable="false" Value="F18C"/></Request>
+        <ChildStep><Assign Var="keyCountBefore" From="response[3..4]"/></ChildStep>
+      </EcuService>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x31" Sub="0x01"><Data IsVariable="false" Value="0202"/></Request>
+        <ChildStep>
+          <If Description="null"><Condition><OneCondition><LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/><RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/></OneCondition></Condition></If>
+          <If Description="null"><Condition><OneCondition><LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/><RightValue IsVariable="false" Value="3"/><ConnectSign Value="OR"/></OneCondition></Condition></If>
+        </ChildStep>
+      </EcuService>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x22"><Data IsVariable="false" Value="F18C"/></Request>
+        <ChildStep><Assign Var="keyCountAfter" From="response[3..4]"/></ChildStep>
+      </EcuService>
+      <EcuService Ecu="IMMO"><Request Service="0x10" Sub="0x01"/></EcuService>
+    </Process>
+  </Processes>
+</FlowConfiguration>

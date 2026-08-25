@@ -1,0 +1,25 @@
+<!-- Illustrative flow (reconstructed request-side names). TPMS sensor re-learn via RoutineControl. -->
+<FlowConfiguration>
+  <Processes>
+    <Process Name="TPMS Matching" Description="Re-learn tyre-pressure sensor IDs">
+      <ChildStep>
+        <EcuService Ecu="IBCM">
+          <Request Service="0x10" Sub="0x03"/>
+          <ChildStep><If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If></ChildStep>
+        </EcuService>
+      </ChildStep>
+      <UserPrompt Message="Drive above 25 km/h for the sensors to report, or trigger each sensor." Timeout="0"/>
+      <EcuService Ecu="IBCM">
+        <Request Service="0x31" Sub="0x01"><Data IsVariable="false" Value="0301"/></Request>
+        <ChildStep>
+          <If Description="null"><Condition><OneCondition><LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/><RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/></OneCondition></Condition></If>
+          <If Description="null"><Condition><OneCondition><LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/><RightValue IsVariable="false" Value="3"/><ConnectSign Value="OR"/></OneCondition></Condition></If>
+        </ChildStep>
+      </EcuService>
+      <EcuService Ecu="IBCM"><Request Service="0x10" Sub="0x01"/></EcuService>
+    </Process>
+  </Processes>
+</FlowConfiguration>

@@ -48,11 +48,14 @@ jobs:
         shell: bash
         run: bash build/check-no-network.sh
 
-      - name: Build Windows solution
-        run: dotnet build ROXDiagnostic.Windows.slnf -c Release
+      - name: Build cross-platform solution
+        run: dotnet build ROXDiagnostic.sln -c Release
+
+      - name: Build WPF app (net8.0-windows)
+        run: dotnet build src/Rox.App/Rox.App.csproj -c Release
 
       - name: Publish self-contained app (win-x64)
-        run: dotnet publish src/Rox.App/Rox.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+        run: dotnet publish src/Rox.App/Rox.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 
       - name: Build MSI (WiX v5)
         run: dotnet build installer/Rox.Installer/Rox.Installer.wixproj -c Release

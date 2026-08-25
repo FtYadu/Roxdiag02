@@ -13,8 +13,8 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ✅ |
 | P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ✅ |
 | P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ✅ |
-| P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ⬜ |
-| P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ⬜ |
+| P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ✅ (Windows-only build) |
+| P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ✅ (Windows-only build) |
 | P10 | `Rox.GoldenTraces` — record/replay regression | ⬜ |
 | P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ⬜ |
 | P12 | Hardware enablement (best-effort, documented) | ⬜ |
@@ -148,6 +148,28 @@ confirmation aborts pre-write; 0x78-during-transfer handled; 0x73 aborts; full r
 
 Tests (4 new, 55 total green): audit written to a separate file; key bytes redacted; a real PDF
 produced (%PDF header, >1 KB); CSV export with correct quoting.
+
+## P8 / P9 — WPF app + views ✅ (builds on Windows)
+
+`Rox.App` (`net8.0-windows`, WPF + WPF-UI Fluent + CommunityToolkit.Mvvm + Microsoft.Extensions.Hosting):
+
+- Generic-host DI (`App.xaml.cs`) wiring `SettingsService`, `DialogService`, `DiagnosticSession` and all
+  view-models; `FluentWindow` shell with DataTemplate-driven navigation (`ShellViewModel`), dark/light
+  theme via `ApplicationThemeManager`, connect/disconnect + status bar.
+- `SettingsService`: `settings.json` under `%AppData%\ROXDiagnostic` + the seed-key module path stored
+  DPAPI-encrypted in a separate file; `DialogService` implements the confirmation + operator-prompt
+  boundaries (irreversible ops require an explicit Yes).
+- `DiagnosticSession` builds transport → UDS client → DTC/security/key/reflash services from settings,
+  defaulting to the simulator; `EcuRegistry` carries the full R11_Oversea ECU map from the vehicle scan.
+- Seven MVVM views bound to the real services: **Dashboard** (vehicle + ECU map), **Diagnostics** (read /
+  clear+read-back / all-ECU scan / CSV+PDF export), **Guided Flows** (drives `FlowInterpreter` over the
+  transport), **Key Functions** (pair/duplicate/delete + audit), **Reflash** (firmware picker, progress +
+  throughput + ETA, voltage/bricking gate), **Expert Console** (raw UDS + live trace), **Settings**
+  (transport, module path + self-test, theme).
+
+The WPF app targets `net8.0-windows` and builds on the **Windows CI job** (the Windows Desktop SDK is not
+available on Linux, so the Linux job builds only the cross-platform core + service libraries). Bundled
+data package added under `data/` (profile + guided-flow XMLs).
 
 ## Read-only foundation (do not rewrite)
 
