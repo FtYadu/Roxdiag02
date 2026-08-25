@@ -40,8 +40,8 @@
       <RegistryValue Root="HKCU" Key="Software\ROXDiagnostic" Name="installed" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
+    <!-- The InstallDirectory attribute sets WIXUI_INSTALLDIR; do not also declare it as a Property. -->
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
-    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
   </Package>
 
   <!-- Harvest the entire self-contained publish output (app + bundled data/) -->
