@@ -18,7 +18,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P10 | `Rox.GoldenTraces` — record/replay regression | ✅ |
 | P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ✅ (MSI builds on Windows) |
 | P12 | Hardware enablement (best-effort, documented) | ✅ |
-| P13 | Acceptance & docs | ⬜ |
+| P13 | Acceptance & docs | ✅ |
 
 ## P0 — Adopt foundation ✅
 
@@ -208,6 +208,22 @@ Tests (3 new, 62 total green): licence missing/valid/tampered/malformed.
   the vendor SDKs, firmware/data-package requirements, and the three open schema items (O-1/O-2/O-3).
 - Compiles + loopback stays green (62 tests); the real path is documented as requiring physical
   validation, never faked.
+
+## P13 — Acceptance & docs ✅
+
+- `samples/Rox.Demo` extended to a full end-to-end walkthrough against the simulator: profile parse,
+  DTC read→clear→read-back with live-fault, guided Add-Key flow, ISO-TP multi-frame + real-socket DoIP,
+  UDS 0x78 pending handling, guarded+audited key pairing, checksum-verified reflash, audit trail, and a
+  generated PDF session report.
+- `build/demo.sh` / `build/demo.cmd` — one-command runner (guard → build → test → demo).
+- `docs/ARCHITECTURE.md` (layer diagram + design decisions), `docs/EXTERNAL_INPUTS.md`, `README.md`
+  rewritten for the whole suite.
+
+**Definition of Done:** `dotnet build` + `dotnet test` green (62 tests); the offline guard passes; the
+simulator-target demo exercises connect, DTC scan+clear with read-back, the real guided flows, a
+simulated key pairing (count increments, audit written), and a simulated MCU reflash (checksum verified)
+— all with correct NRC handling and logs. The real-hardware path is implemented behind the same
+interfaces, compiles, and is documented with every `TODO(hardware)`. No embedded OEM crypto.
 
 ## Read-only foundation (do not rewrite)
 

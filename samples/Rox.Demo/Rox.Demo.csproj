@@ -7,6 +7,13 @@
     <ProjectReference Include="../../src/Rox.Profile/Rox.Profile.csproj" />
     <ProjectReference Include="../../src/Rox.FlowEngine/Rox.FlowEngine.csproj" />
     <ProjectReference Include="../../src/Rox.Simulator/Rox.Simulator.csproj" />
+    <ProjectReference Include="../../src/Rox.Transport/Rox.Transport.csproj" />
+    <ProjectReference Include="../../src/Rox.Uds/Rox.Uds.csproj" />
+    <ProjectReference Include="../../src/Rox.Diagnostics/Rox.Diagnostics.csproj" />
+    <ProjectReference Include="../../src/Rox.Security/Rox.Security.csproj" />
+    <ProjectReference Include="../../src/Rox.KeyFunctions/Rox.KeyFunctions.csproj" />
+    <ProjectReference Include="../../src/Rox.Reflash/Rox.Reflash.csproj" />
+    <ProjectReference Include="../../src/Rox.Logging/Rox.Logging.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data/**" CopyToOutputDirectory="PreserveNewest" />
