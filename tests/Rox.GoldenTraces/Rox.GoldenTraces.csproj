@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Rox.Transport/Rox.Transport.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="traces/**/*.json" CopyToOutputDirectory="PreserveNewest" Link="traces/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

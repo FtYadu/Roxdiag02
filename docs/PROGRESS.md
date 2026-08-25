@@ -15,7 +15,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ✅ |
 | P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ✅ (Windows-only build) |
 | P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ✅ (Windows-only build) |
-| P10 | `Rox.GoldenTraces` — record/replay regression | ⬜ |
+| P10 | `Rox.GoldenTraces` — record/replay regression | ✅ |
 | P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ⬜ |
 | P12 | Hardware enablement (best-effort, documented) | ⬜ |
 | P13 | Acceptance & docs | ⬜ |
@@ -170,6 +170,20 @@ produced (%PDF header, >1 KB); CSV export with correct quoting.
 The WPF app targets `net8.0-windows` and builds on the **Windows CI job** (the Windows Desktop SDK is not
 available on Linux, so the Linux job builds only the cross-platform core + service libraries). Bundled
 data package added under `data/` (profile + guided-flow XMLs).
+
+## P10 — Golden-trace regression ✅
+
+`tests/Rox.GoldenTraces` (net8.0):
+
+- `RecordingTransport` captures every request/response exchange; `ReplayTransport` replays a recorded
+  trace with no target and **throws on any divergence** (changed bytes, order, extra/missing request) —
+  exactly how a regression in the UDS/DTC/flow layers is caught in CI.
+- Committed fixtures under `traces/` (DTC read→clear→read-back, key-count read) recorded from the
+  simulator and copied to test output.
+
+Tests (4 new, 59 total green): recorded DTC cycle replays identically to the live sim; committed DTC
+trace replays and flags the live fault; committed key-count trace replays; a divergent request is
+detected as a regression.
 
 ## Read-only foundation (do not rewrite)
 

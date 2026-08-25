@@ -1,0 +1,13 @@
+{
+  "Name": "read_key_count_IMMO",
+  "Exchanges": [
+    {
+      "Req": "1003",
+      "Resp": "5003"
+    },
+    {
+      "Req": "22F18C",
+      "Resp": "62F18C02"
+    }
+  ]
+}
