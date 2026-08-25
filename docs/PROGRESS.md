@@ -17,7 +17,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ✅ (Windows-only build) |
 | P10 | `Rox.GoldenTraces` — record/replay regression | ✅ |
 | P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ✅ (MSI builds on Windows) |
-| P12 | Hardware enablement (best-effort, documented) | ⬜ |
+| P12 | Hardware enablement (best-effort, documented) | ✅ |
 | P13 | Acceptance & docs | ⬜ |
 
 ## P0 — Adopt foundation ✅
@@ -197,6 +197,17 @@ detected as a regression.
   reflash, expert console, settings, logs/audit, safety).
 
 Tests (3 new, 62 total green): licence missing/valid/tampered/malformed.
+
+## P12 — Hardware enablement ✅ (documented, simulator-validated)
+
+- PCAN-Basic adapter is real P/Invoke; Kvaser/Vector are correctly-shaped stubs; the DoIP client is a
+  complete ISO 13400 implementation validated over a real socket against the bundled server. All
+  hardware-specific paths sit behind `ICanChannel` / `ITransport` / `IVoltageProvider` and are marked
+  `TODO(hardware)`.
+- `docs/EXTERNAL_INPUTS.md` rewritten: the seed-key ABI, every `TODO(hardware)`/`TODO(licensing)` marker,
+  the vendor SDKs, firmware/data-package requirements, and the three open schema items (O-1/O-2/O-3).
+- Compiles + loopback stays green (62 tests); the real path is documented as requiring physical
+  validation, never faked.
 
 ## Read-only foundation (do not rewrite)
 
