@@ -11,7 +11,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ✅ |
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ✅ |
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ✅ |
-| P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ⬜ |
+| P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ✅ |
 | P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ⬜ |
 | P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ⬜ |
 | P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ⬜ |
@@ -118,6 +118,22 @@ native `.so` compiled at runtime driving the full handshake through the P/Invoke
 Tests (6 new, 43 total green): pairing increments + audit; deletion decrements with read-back;
 duplication skeleton; declined confirmation makes no write (audited Denied); lockout surfaced with no
 write; headless default denies irreversible writes.
+
+## P6 — Reflash controller ✅
+
+`Rox.Reflash` (net8.0): `ReflashService` (FR-05, UC-03).
+
+- Pre-flash: voltage gate (blocks below threshold, FR-05.8) → bricking-risk confirmation → programming
+  session (`10 02`) → DTCs off (`85 02`) → SecurityAccess → checkDependencies → erase.
+- Download: `0x34` then **block size taken from the response's `maxNumberOfBlockLength` (NOT a fixed
+  2 KB)**; `0x36` loop with **BSC wrap 0xFF→0x00**, 0x78 handled by the client, **0x73 aborts**;
+  `0x37`; post-flash checksum routine with a 32-bit sum matching the simulator.
+- `IProgress<ReflashProgress>` with throughput + ETA + percent; audit entry carries the checksum.
+- Simulator extended (additive): accumulates transferred firmware + a `checkMemory` routine (0xFF01).
+
+Tests (8 new, 51 total green): success + checksum verify; block size from 0x34 (2 blocks for 300 B);
+BSC wrap across 258 blocks; voltage-below-threshold blocks with nothing transferred; declined
+confirmation aborts pre-write; 0x78-during-transfer handled; 0x73 aborts; full reflash over ISO-TP framing.
 
 ## Read-only foundation (do not rewrite)
 

@@ -90,14 +90,29 @@ public sealed class EcuSimulator : IEcuServiceExecutor
             if (_keyCount > 0) _keyCount--;
             return Positive(UdsServices.RoutineControl, type, rHi, rLo);
         }
+        if (type == 0x01 && rHi == 0xFF && rLo == 0x01) // checkMemory routine (additive): compare provided sum32
+        {
+            if (req.Length >= 8)
+            {
+                uint expected = (uint)((req[4] << 24) | (req[5] << 16) | (req[6] << 8) | req[7]);
+                if (expected != FlashChecksum) return Neg(UdsServices.RoutineControl, Nrc.GeneralProgrammingFailure);
+            }
+            return Positive(UdsServices.RoutineControl, type, rHi, rLo, 0x00); // routineInfo 0x00 = OK
+        }
         if (type == 0x03) return Positive(UdsServices.RoutineControl, type, rHi, rLo, 0x00); // complete
         return Positive(UdsServices.RoutineControl, type, rHi, rLo);
     }
+
+    private readonly List<byte> _flashBuffer = new(); // additive: accumulates transferred firmware for checkMemory
+
+    /// <summary>Additive 32-bit sum of all transferred bytes (matches Rox.Reflash's checksum).</summary>
+    public uint FlashChecksum { get { uint s = 0; foreach (var b in _flashBuffer) s += b; return s; } }
 
     private byte[] RequestDownload()
     {
         if (!_securityGranted) return Neg(UdsServices.RequestDownload, Nrc.SecurityAccessDenied);
         _blockCounter = 1;
+        _flashBuffer.Clear();
         return Positive(UdsServices.RequestDownload, 0x20, 0x01, 0x02); // maxNumberOfBlockLength = 0x0102
     }
 
@@ -106,6 +121,7 @@ public sealed class EcuSimulator : IEcuServiceExecutor
         if (req.Length < 2) return Neg(UdsServices.TransferData, Nrc.IncorrectMessageLengthOrInvalidFormat);
         if (req[1] != (byte)_blockCounter) return Neg(UdsServices.TransferData, Nrc.WrongBlockSequenceCounter);
         byte bsc = req[1];
+        if (req.Length > 2) _flashBuffer.AddRange(req.Skip(2)); // store payload for checksum verification
         _blockCounter = (_blockCounter + 1) & 0xFF;
         return Positive(UdsServices.TransferData, bsc);
     }

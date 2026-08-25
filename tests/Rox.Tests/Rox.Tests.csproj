@@ -19,5 +19,6 @@
     <ProjectReference Include="../../src/Rox.Security/Rox.Security.csproj" />
     <ProjectReference Include="../../src/Rox.Logging/Rox.Logging.csproj" />
     <ProjectReference Include="../../src/Rox.KeyFunctions/Rox.KeyFunctions.csproj" />
+    <ProjectReference Include="../../src/Rox.Reflash/Rox.Reflash.csproj" />
   </ItemGroup>
 </Project>
