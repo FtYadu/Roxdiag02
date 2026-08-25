@@ -6,7 +6,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | Phase | Scope | State |
 |------|-------|-------|
 | P0 | Adopt tested core; build+test green; CI + offline guard | ✅ |
-| P1 | `Rox.Transport` — ITransport, loopback, DoIP sim + state machine, ISO-TP, vendor adapters, executor adapter | ⬜ |
+| P1 | `Rox.Transport` — ITransport, loopback, DoIP sim + state machine, ISO-TP, vendor adapters, executor adapter | ✅ |
 | P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ⬜ |
 | P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ⬜ |
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ⬜ |
@@ -34,6 +34,26 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 - `build/check-no-network.sh` fails the build if any banned outbound-network API
   (`HttpClient`, `WebClient`, `System.Net.Http`, …) or telemetry/auto-update package is introduced.
   DoIP sockets (`System.Net.Sockets`) are deliberately allowed.
+
+## P1 — Transport abstraction ✅
+
+`Rox.Transport` (net8.0, cross-platform):
+
+- `ITransport` — the single `Task<byte[]> SendAsync(request, ct)` boundary; CAN vs DoIP hidden.
+- `TransportEcuServiceExecutor` — adapts any `ITransport` to the flow engine's `IEcuServiceExecutor`,
+  so the existing `FlowInterpreter` runs unchanged over real transport.
+- `LoopbackTransport` — in-process simulator, no framing (default target).
+- **ISO-TP (ISO 15765-2)** — `IsoTpChannel` implements SF/FF/CF/FC with BlockSize + STmin;
+  `LoopbackCanChannel` gives an in-memory tester/ECU CAN pair; `IsoTpCanTransport` (tester) and
+  `IsoTpLoopbackTransport` (tester + background ECU responder over the simulator).
+- **DoIP (ISO 13400)** — `DoipMessage` framing, `DoipClientTransport` (real TCP, routing activation
+  0x0005→0x0006 before UDS, 0x8001/0x8002/0x8003), `SimulatedDoipServer` for hardware-free socket tests.
+- Vendor adapters — `PcanCanChannel` (real PCAN-Basic P/Invoke, `TODO(hardware)`), Kvaser + Vector
+  stubs; `TransportFactory` builds the configured kind.
+
+Tests (6 new, 18 total green): 40-byte ISO-TP multi-frame round-trip; multi-frame DTC response via
+ISO-TP loopback; Add-Key flow over both the plain loopback and the ISO-TP transport; DoIP routing
+activation + diagnostic round-trip over a real localhost socket; DoIP connect failure path.
 
 ## Read-only foundation (do not rewrite)
 

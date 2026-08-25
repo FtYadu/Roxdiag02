@@ -13,5 +13,6 @@
     <ProjectReference Include="../../src/Rox.Profile/Rox.Profile.csproj" />
     <ProjectReference Include="../../src/Rox.FlowEngine/Rox.FlowEngine.csproj" />
     <ProjectReference Include="../../src/Rox.Simulator/Rox.Simulator.csproj" />
+    <ProjectReference Include="../../src/Rox.Transport/Rox.Transport.csproj" />
   </ItemGroup>
 </Project>
