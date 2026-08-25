@@ -12,7 +12,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ✅ |
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ✅ |
 | P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ✅ |
-| P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ⬜ |
+| P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ✅ |
 | P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ⬜ |
 | P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ⬜ |
 | P10 | `Rox.GoldenTraces` — record/replay regression | ⬜ |
@@ -134,6 +134,20 @@ write; headless default denies irreversible writes.
 Tests (8 new, 51 total green): success + checksum verify; block size from 0x34 (2 blocks for 300 B);
 BSC wrap across 258 blocks; voltage-below-threshold blocks with nothing transferred; declined
 confirmation aborts pre-write; 0x78-during-transfer handled; 0x73 aborts; full reflash over ISO-TP framing.
+
+## P7 — Logging / audit / reporting ✅
+
+`Rox.Logging` (net8.0) expanded:
+
+- `SerilogSetup` — two independent rolling-file sinks under `%AppData%\ROXDiagnostic\Logs\`: a general
+  session log (daily) and a **separate audit sink** (monthly, longer retention). No network sinks.
+- `SerilogAuditSink : IAuditSink`; `LogRedaction` scrubs SecurityAccess key bytes from the general
+  trace (never log plaintext keys/seeds, FR-08.4) — audit entries are redacted by construction.
+- Reporting: `SessionReport` model; `PdfReportGenerator` (QuestPDF, offline community licence) for the
+  warranty session summary; `CsvExporter` for DTC/audit CSV and raw UDS trace TXT.
+
+Tests (4 new, 55 total green): audit written to a separate file; key bytes redacted; a real PDF
+produced (%PDF header, >1 KB); CSV export with correct quoting.
 
 ## Read-only foundation (do not rewrite)
 
