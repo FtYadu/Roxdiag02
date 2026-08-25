@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  # Cross-platform core + all net8.0 service libraries build and test on Linux.
+  # The WPF app (net8.0-windows) and the WiX MSI are Windows-only and excluded here.
+  core:
+    name: Core & service libraries (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Offline guard (no network egress)
+        run: bash build/check-no-network.sh
+
+      - name: Restore
+        run: dotnet restore ROXDiagnostic.sln
+
+      - name: Build
+        run: dotnet build ROXDiagnostic.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test ROXDiagnostic.sln -c Release --no-build --verbosity normal
+
+  # The Windows app + installer build on a Windows runner. Kept as a separate job
+  # so the cross-platform core is always validated even if the Windows leg is skipped.
+  windows-app:
+    name: WPF app & MSI (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Offline guard (no network egress)
+        shell: bash
+        run: bash build/check-no-network.sh
+
+      - name: Build Windows solution
+        run: dotnet build ROXDiagnostic.Windows.slnf -c Release
+
+      - name: Publish self-contained app (win-x64)
+        run: dotnet publish src/Rox.App/Rox.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+
+      - name: Build MSI (WiX v5)
+        run: dotnet build installer/Rox.Installer/Rox.Installer.wixproj -c Release
