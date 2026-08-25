@@ -18,7 +18,7 @@ public sealed class SettingsService
     public SettingsService(string? baseDir = null)
     {
         _dir = baseDir ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ROXDiagnostic");
-        Directory.CreateDirectory(_dir);
+        System.IO.Directory.CreateDirectory(_dir); // fully qualified: the 'Directory' property below shadows System.IO.Directory
         _settingsPath = Path.Combine(_dir, "settings.json");
         _modulePathStore = new ProtectedValueStore(Path.Combine(_dir, "seedkey.path.dat"));
     }
