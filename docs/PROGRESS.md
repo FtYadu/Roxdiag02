@@ -8,7 +8,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P0 | Adopt tested core; build+test green; CI + offline guard | ✅ |
 | P1 | `Rox.Transport` — ITransport, loopback, DoIP sim + state machine, ISO-TP, vendor adapters, executor adapter | ✅ |
 | P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ✅ |
-| P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ⬜ |
+| P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ✅ |
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ⬜ |
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ⬜ |
 | P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ⬜ |
@@ -71,6 +71,19 @@ activation + diagnostic round-trip over a real localhost socket; DoIP connect fa
 
 Tests (7 new, 25 total green): positive path; 0x78 polled to resolution; 0x33 terminal; 0x36 lockout
 surfaced without hammering; session-change NRC retried; session tracking; keep-alive fires repeatedly.
+
+## P3 — DTC service ✅
+
+`Rox.Diagnostics` (net8.0): `DtcService` over `UdsClient`.
+
+- `ReadAsync` — `19 02 FF`, decode J2012 + status bits, attach user-editable descriptions.
+- `ReadClearReadBackAsync` — capture pre-clear list → enter `10 03` if needed → `14 FF FF FF` →
+  re-read; codes gone are **stale cleared**, codes that re-set immediately are flagged **live faults**;
+  produces the UC-01 summary ("N stale cleared, M live remaining").
+- `ScanAllAsync` — all-ECU aggregation. Clear rejection surfaced with decoded NRC.
+
+Tests (4 new, 29 total green): decode + descriptions; read→clear→read-back live/stale split;
+clear-rejection NRC surfacing; all-ECU aggregate.
 
 ## Read-only foundation (do not rewrite)
 
