@@ -16,7 +16,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ✅ (Windows-only build) |
 | P9 | Views — Dashboard, Diagnostics, Guided Flows, Key Functions, Reflash, Expert Console, Settings | ✅ (Windows-only build) |
 | P10 | `Rox.GoldenTraces` — record/replay regression | ✅ |
-| P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ⬜ |
+| P11 | Packaging — WiX v5 MSI, self-contained publish, bundle data, USER_MANUAL | ✅ (MSI builds on Windows) |
 | P12 | Hardware enablement (best-effort, documented) | ⬜ |
 | P13 | Acceptance & docs | ⬜ |
 
@@ -184,6 +184,19 @@ data package added under `data/` (profile + guided-flow XMLs).
 Tests (4 new, 59 total green): recorded DTC cycle replays identically to the live sim; committed DTC
 trace replays and flags the live fault; committed key-count trace replays; a divergent request is
 detected as a regression.
+
+## P11 — Packaging ✅ (MSI builds on Windows)
+
+- `installer/Rox.Installer` — WiX v5 (`WixToolset.Sdk/5.0.2`) MSI: installs the self-contained WPF app
+  + bundled `data/` to `Program Files\ROXDiagnostic`, Start-menu shortcut, clean major-upgrade,
+  InstallDir UI, no network/auto-update components. Harvests the publish output via the `<Files>` element.
+  Built by the Windows CI job (`dotnet publish` self-contained win-x64 single-file → `dotnet build` wixproj).
+- `LicenseValidator` (Rox.Security) — offline licence-key format/checksum validation (stub for the
+  production scheme), surfaced on the Dashboard and configurable in Settings.
+- `docs/USER_MANUAL.md` — full operator guide (install, connect, DTCs, guided flows, key functions,
+  reflash, expert console, settings, logs/audit, safety).
+
+Tests (3 new, 62 total green): licence missing/valid/tampered/malformed.
 
 ## Read-only foundation (do not rewrite)
 

@@ -29,6 +29,9 @@ public sealed class AppSettings
     public string? DataPackageDirectory { get; set; }
     public string? LogDirectory { get; set; }
 
+    // Licensing (offline)
+    public string? LicenseKey { get; set; }
+
     // UI
     public string Theme { get; set; } = "Dark"; // "Dark" | "Light"
 }

@@ -30,6 +30,8 @@ public sealed partial class SettingsViewModel : PageViewModel
     [ObservableProperty] private string? _securityModulePath;
     [ObservableProperty] private string _moduleProtection = "";
     [ObservableProperty] private string _theme = "Dark";
+    [ObservableProperty] private string? _licenseKey;
+    [ObservableProperty] private string _licenseStatus = "";
     [ObservableProperty] private string _status = "";
 
     public SettingsViewModel(SettingsService settings)
@@ -49,6 +51,8 @@ public sealed partial class SettingsViewModel : PageViewModel
         MinReflashVoltage = s.MinReflashVoltage;
         DataPackageDirectory = s.DataPackageDirectory;
         Theme = s.Theme;
+        LicenseKey = s.LicenseKey;
+        LicenseStatus = LicenseValidator.Validate(s.LicenseKey).Message;
         SecurityModulePath = _settings.SecurityModulePath;
         ModuleProtection = _settings.ModulePathEncrypted ? "DPAPI-encrypted (per user)" : "Not encrypted (non-Windows dev only)";
     }
@@ -93,6 +97,8 @@ public sealed partial class SettingsViewModel : PageViewModel
         s.MinReflashVoltage = MinReflashVoltage;
         s.DataPackageDirectory = DataPackageDirectory;
         s.Theme = Theme;
+        s.LicenseKey = LicenseKey;
+        LicenseStatus = LicenseValidator.Validate(LicenseKey).Message;
         _settings.Save(s);
         _settings.SecurityModulePath = SecurityModulePath;
         ModuleProtection = _settings.ModulePathEncrypted ? "DPAPI-encrypted (per user)" : "Not encrypted (non-Windows dev only)";

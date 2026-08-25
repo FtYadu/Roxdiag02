@@ -24,6 +24,7 @@
           <TextBlock Text="{Binding Transport}" />
         </StackPanel>
         <TextBlock Text="{Binding ProfileSummary}" TextWrapping="Wrap" Opacity="0.85" />
+        <TextBlock Text="{Binding License}" TextWrapping="Wrap" Opacity="0.6" FontSize="12" Margin="0,4,0,0" />
       </StackPanel>
     </Border>
 

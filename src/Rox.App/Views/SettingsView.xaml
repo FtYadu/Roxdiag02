@@ -43,6 +43,10 @@
       </Grid>
       <TextBlock Text="{Binding ModuleProtection}" Opacity="0.6" FontSize="12" Margin="0,0,0,12" />
 
+      <TextBlock Text="Licence key (offline)" FontWeight="SemiBold" Margin="0,0,0,4" />
+      <TextBox Text="{Binding LicenseKey}" Margin="0,0,0,4" />
+      <TextBlock Text="{Binding LicenseStatus}" Opacity="0.6" FontSize="12" Margin="0,0,0,16" />
+
       <TextBlock Text="Theme" FontWeight="SemiBold" Margin="0,0,0,4" />
       <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" Width="160" HorizontalAlignment="Left" Margin="0,0,0,16" />
 

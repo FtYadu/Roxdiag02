@@ -1,12 +1,14 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Rox.App.Services;
+using Rox.Security;
 
 namespace Rox.App.ViewModels;
 
 public sealed partial class DashboardViewModel : PageViewModel
 {
     private readonly DiagnosticSession _session;
+    private readonly SettingsService _settings;
     public override string Title => "Dashboard";
     public override string Glyph => ""; // Home
 
@@ -16,13 +18,19 @@ public sealed partial class DashboardViewModel : PageViewModel
     [ObservableProperty] private string _connection = "Disconnected";
     [ObservableProperty] private string _transport = "—";
     [ObservableProperty] private string _profileSummary = "No profile loaded";
+    [ObservableProperty] private string _license = "";
 
-    public DashboardViewModel(DiagnosticSession session) => _session = session;
+    public DashboardViewModel(DiagnosticSession session, SettingsService settings)
+    {
+        _session = session;
+        _settings = settings;
+    }
 
     public override void OnActivated()
     {
         Connection = _session.IsConnected ? "Connected" : "Disconnected";
         Transport = _session.TransportName;
+        License = LicenseValidator.Validate(_settings.Load().LicenseKey).Message;
         Ecus.Clear();
         foreach (var e in _session.Ecus) Ecus.Add(e);
 
