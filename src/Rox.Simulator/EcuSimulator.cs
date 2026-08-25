@@ -78,10 +78,16 @@ public sealed class EcuSimulator : IEcuServiceExecutor
     {
         if (req.Length < 4) return Neg(UdsServices.RoutineControl, Nrc.IncorrectMessageLengthOrInvalidFormat);
         byte type = req[1], rHi = req[2], rLo = req[3];
-        if (type == 0x01 && rHi == 0x02 && rLo == 0x01) // key-learn routine
+        if (type == 0x01 && rHi == 0x02 && rLo == 0x01) // key-learn routine (pairing / duplication)
         {
             if (!_securityGranted) return Neg(UdsServices.RoutineControl, Nrc.SecurityAccessDenied);
             _keyCount++;
+            return Positive(UdsServices.RoutineControl, type, rHi, rLo);
+        }
+        if (type == 0x01 && rHi == 0x02 && rLo == 0x02) // key-delete routine (additive extension)
+        {
+            if (!_securityGranted) return Neg(UdsServices.RoutineControl, Nrc.SecurityAccessDenied);
+            if (_keyCount > 0) _keyCount--;
             return Positive(UdsServices.RoutineControl, type, rHi, rLo);
         }
         if (type == 0x03) return Positive(UdsServices.RoutineControl, type, rHi, rLo, 0x00); // complete

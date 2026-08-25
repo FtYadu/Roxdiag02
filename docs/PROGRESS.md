@@ -10,7 +10,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 | P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ✅ |
 | P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ✅ |
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ✅ |
-| P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ⬜ |
+| P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ✅ |
 | P6 | `Rox.Reflash` — block sizing from 0x34, transfer loop, checksum, voltage gate | ⬜ |
 | P7 | `Rox.Logging` — Serilog + audit sink + PDF/CSV reporting | ⬜ |
 | P8 | `Rox.App` — WPF shell + DI host + settings/DPAPI + navigation + themes | ⬜ |
@@ -101,6 +101,23 @@ clear-rejection NRC surfacing; all-ECU aggregate.
 Tests (8 new, 37 total green): grant against sim; session cache; wrong key → invalid; 0x36 lockout
 surfaced + no hammering; missing module handled; manual provider; DPAPI store round-trip; **and a real
 native `.so` compiled at runtime driving the full handshake through the P/Invoke path**.
+
+## P5 — Key functions ✅
+
+`Rox.Logging` (contracts) + `Rox.KeyFunctions` (net8.0):
+
+- Audit + safety contracts (`Rox.Logging`): `AuditEntry`/`IAuditSink` (in-memory/null/composite),
+  `ConfirmationRequest`/`IConfirmationService` (deny-destructive headless default; delegate for UI/tests).
+- `KeyFunctionService` — pairing, duplication, deletion on the shared skeleton (`10 03` → SecurityAccess
+  → read key count → operator prompt → `31 01` learn/delete → poll `31 03` → verify count → `10 01`),
+  with TesterPresent keep-alive during the operation. **Every write is confirmation-gated and audited**;
+  before/after key counts are surfaced; security lockout (0x36/0x37) surfaced without hammering.
+- Routine ids / DIDs are `KeyFunctionConfig` data-package values, never embedded logic.
+- Simulator extended (additive) with a key-delete routine (0x0202) so deletion read-back is testable.
+
+Tests (6 new, 43 total green): pairing increments + audit; deletion decrements with read-back;
+duplication skeleton; declined confirmation makes no write (audited Denied); lockout surfaced with no
+write; headless default denies irreversible writes.
 
 ## Read-only foundation (do not rewrite)
 
