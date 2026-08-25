@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Rox.Core/Rox.Core.csproj" />
+    <ProjectReference Include="../../src/Rox.Profile/Rox.Profile.csproj" />
+    <ProjectReference Include="../../src/Rox.FlowEngine/Rox.FlowEngine.csproj" />
+    <ProjectReference Include="../../src/Rox.Simulator/Rox.Simulator.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

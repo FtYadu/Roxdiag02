@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FB879D03-678B-438A-96EE-0A8E7296ECBB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.Core", "src\Rox.Core\Rox.Core.csproj", "{66FB0B98-4B25-4E19-AD53-17854180F66F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.Profile", "src\Rox.Profile\Rox.Profile.csproj", "{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.FlowEngine", "src\Rox.FlowEngine\Rox.FlowEngine.csproj", "{9F8655ED-E902-4468-B96B-B7BB425486C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.Simulator", "src\Rox.Simulator\Rox.Simulator.csproj", "{D00D267D-7199-4261-98AA-D84A4154552B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{438E17D4-0382-40CE-9F78-40E1D4A2A88C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.Demo", "samples\Rox.Demo\Rox.Demo.csproj", "{4411A9EC-29AF-4CF9-9B54-B02E41622880}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C018ACB9-294A-45CC-A2B7-76AF65F83B4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rox.Tests", "tests\Rox.Tests\Rox.Tests.csproj", "{E3BD7738-FA46-414B-9619-A7CAC79398B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{66FB0B98-4B25-4E19-AD53-17854180F66F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66FB0B98-4B25-4E19-AD53-17854180F66F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66FB0B98-4B25-4E19-AD53-17854180F66F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66FB0B98-4B25-4E19-AD53-17854180F66F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F8655ED-E902-4468-B96B-B7BB425486C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F8655ED-E902-4468-B96B-B7BB425486C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F8655ED-E902-4468-B96B-B7BB425486C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F8655ED-E902-4468-B96B-B7BB425486C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D00D267D-7199-4261-98AA-D84A4154552B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D00D267D-7199-4261-98AA-D84A4154552B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D00D267D-7199-4261-98AA-D84A4154552B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D00D267D-7199-4261-98AA-D84A4154552B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4411A9EC-29AF-4CF9-9B54-B02E41622880}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4411A9EC-29AF-4CF9-9B54-B02E41622880}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4411A9EC-29AF-4CF9-9B54-B02E41622880}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4411A9EC-29AF-4CF9-9B54-B02E41622880}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3BD7738-FA46-414B-9619-A7CAC79398B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3BD7738-FA46-414B-9619-A7CAC79398B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3BD7738-FA46-414B-9619-A7CAC79398B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3BD7738-FA46-414B-9619-A7CAC79398B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{66FB0B98-4B25-4E19-AD53-17854180F66F} = {FB879D03-678B-438A-96EE-0A8E7296ECBB}
+		{FAFE6088-7BFB-4B98-B7A2-A9699F2DFF50} = {FB879D03-678B-438A-96EE-0A8E7296ECBB}
+		{9F8655ED-E902-4468-B96B-B7BB425486C8} = {FB879D03-678B-438A-96EE-0A8E7296ECBB}
+		{D00D267D-7199-4261-98AA-D84A4154552B} = {FB879D03-678B-438A-96EE-0A8E7296ECBB}
+		{4411A9EC-29AF-4CF9-9B54-B02E41622880} = {438E17D4-0382-40CE-9F78-40E1D4A2A88C}
+		{E3BD7738-FA46-414B-9619-A7CAC79398B9} = {C018ACB9-294A-45CC-A2B7-76AF65F83B4D}
+	EndGlobalSection
+EndGlobal
