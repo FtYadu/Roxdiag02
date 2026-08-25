@@ -8,7 +8,7 @@ namespace Rox.Transport.Doip;
 /// before any UDS traffic; diagnostic messages are payload type 0x8001 with 0x8002/0x8003 ack/nack.
 /// Works against a real vehicle's DoIP entity or the bundled <see cref="SimulatedDoipServer"/>.
 /// </summary>
-public sealed class DoipClientTransport : ITransport
+public sealed class DoipClientTransport : IPendingAwareTransport
 {
     private readonly string _host;
     private readonly int _port;
@@ -69,11 +69,22 @@ public sealed class DoipClientTransport : ITransport
 
         await DoipStream.WriteMessageAsync(_stream,
             DoipMessage.Diagnostic(_sourceAddress, _targetAddress, request, _protocolVersion), ct).ConfigureAwait(false);
+        return await ReadDiagnosticAsync(ct).ConfigureAwait(false);
+    }
 
+    /// <summary>Read the next diagnostic response without re-sending (used for 0x78 pending continuation).</summary>
+    public Task<byte[]> ReceiveNextAsync(CancellationToken ct = default)
+    {
+        if (!IsConnected || _stream is null) throw new InvalidOperationException("DoIP transport not connected.");
+        return ReadDiagnosticAsync(ct);
+    }
+
+    private async Task<byte[]> ReadDiagnosticAsync(CancellationToken ct)
+    {
         // The entity sends a 0x8002 ack (or 0x8003 nack) then the diagnostic response (0x8001).
         while (true)
         {
-            var msg = await DoipStream.ReadMessageAsync(_stream, ct).ConfigureAwait(false)
+            var msg = await DoipStream.ReadMessageAsync(_stream!, ct).ConfigureAwait(false)
                       ?? throw new DoipException("Connection closed awaiting diagnostic response.");
             switch (msg.PayloadType)
             {
@@ -84,12 +95,11 @@ public sealed class DoipClientTransport : ITransport
                 case DoipPayloadTypes.DiagnosticMessage:
                     return msg.DiagnosticUds();
                 case DoipPayloadTypes.AliveCheckRequest:
-                    await DoipStream.WriteMessageAsync(_stream,
-                        new DoipMessage { ProtocolVersion = _protocolVersion, PayloadType = DoipPayloadTypes.AliveCheckResponse, Payload = BitConverter.GetBytes(_sourceAddress) }, ct).ConfigureAwait(false);
+                    await DoipStream.WriteMessageAsync(_stream!,
+                        new DoipMessage { ProtocolVersion = _protocolVersion, PayloadType = DoipPayloadTypes.AliveCheckResponse, Payload = new byte[] { (byte)(_sourceAddress >> 8), (byte)_sourceAddress } }, ct).ConfigureAwait(false);
                     continue;
                 default:
-                    // Ignore unrelated announcements etc.
-                    continue;
+                    continue; // ignore unrelated announcements
             }
         }
     }

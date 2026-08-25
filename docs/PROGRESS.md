@@ -7,7 +7,7 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 |------|-------|-------|
 | P0 | Adopt tested core; build+test green; CI + offline guard | ✅ |
 | P1 | `Rox.Transport` — ITransport, loopback, DoIP sim + state machine, ISO-TP, vendor adapters, executor adapter | ✅ |
-| P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ⬜ |
+| P2 | `Rox.Uds` — stateful UDS client (session, keep-alive, 0x78 poll, retry) | ✅ |
 | P3 | `Rox.Diagnostics` — DTC read→clear→read-back live-fault orchestration | ⬜ |
 | P4 | `Rox.Security` — user-DLL provider, DPAPI path, cache, lockout, manual fallback | ⬜ |
 | P5 | `Rox.KeyFunctions` — pairing/duplication/deletion + guardrails + audit | ⬜ |
@@ -54,6 +54,23 @@ interface, validated only on the simulator; real path documented in `docs/EXTERN
 Tests (6 new, 18 total green): 40-byte ISO-TP multi-frame round-trip; multi-frame DTC response via
 ISO-TP loopback; Add-Key flow over both the plain loopback and the ISO-TP transport; DoIP routing
 activation + diagnostic round-trip over a real localhost socket; DoIP connect failure path.
+
+## P2 — UDS client ✅
+
+`Rox.Uds` (net8.0):
+
+- `UdsClient` over `ITransport`: session tracking, retry/timeout policy driven by
+  `Nrc.RecommendedAction`, and **0x78 response-pending polling that is never a failure** (uses
+  `IPendingAwareTransport.ReceiveNextAsync` where available; re-send fallback otherwise).
+- TesterPresent **keep-alive** scope (`StartKeepAlive`, ~2 s) that shares the request gate so it never
+  interleaves on the wire; all transport access serialized via a semaphore.
+- Typed helpers for every service in §6 (0x10/0x11/0x14/0x19/0x22/0x27/0x2E/0x31/0x34/0x36/0x37/0x3E/0x85).
+- `UdsTraceEntry` event feed for the Expert Console live trace / logging (never carries decoded keys).
+- `ScriptedFaultTransport` decorator (in `Rox.Transport`) injects 0x78/0x33/0x36/0x73 to exercise
+  error paths without touching the foundation simulator.
+
+Tests (7 new, 25 total green): positive path; 0x78 polled to resolution; 0x33 terminal; 0x36 lockout
+surfaced without hammering; session-change NRC retried; session tracking; keep-alive fires repeatedly.
 
 ## Read-only foundation (do not rewrite)
 
