@@ -1,0 +1,1872 @@
+Product Requirements Document (PRD)
+
+ROX Offline Diagnostic Suite — Windows Desktop Application
+
+Version: 2.0 Date: 2026-08-25 Status: Draft (supersedes v1.0) Platform target:
+
+R11_Oversea (Chinese-OEM export EV, domain/zonal E/E architecture, L2++/L3-capable)
+
+0. Changelog — What Changed in v2.0
+
+v2.0 folds in the results of the flow-format reverse-engineering and the feature additions
+
+agreed during design review. The material deltas from v1.0:
+
+#
+
+Area
+
+Change
+
+C-
+
+1
+
+C-
+
+2
+
+C-
+
+3
+
+C-
+
+4
+
+C-
+
+5
+
+Added a full, evidence-based FlowConfiguration schema
+
+specification (new §5) replacing the generic “parse XML flows”
+
+Flow Engine
+
+language. Defines element containment, the variable model, condition
+
+grouping, and two parser quirks (trailing- ConnectSign  no-op,
+
+consecutive- If  acceptance idiom).
+
+Enumerated the four AST node types the interpreter must add beyond
+
+Flow Engine
+
+EcuService  +  If : SecurityAccess, UserPrompt, Assign/Extract,
+
+Loop. Without these the engine parses the simple flows but chokes on
+
+key/reflash flows.
+
+Features
+
+Key Pairing and Key Duplication promoted to first-class guided
+
+functions (new FR-09), distinct from the generic “add key” flow.
+
+DTC handling upgraded to the professional read → clear → read-back
+
+Features
+
+pattern, with live-fault detection (a code that re-sets instantly is an
+
+active fault, not stale).
+
+ResponseStatus semantics corrected. v1.0 (UC-02) treated
+
+Correctness
+
+ResponseStatus = 3  as a failure/abort. The observed flow accepts
+
+{2, 3}  as continue-path values. The exact enum is now an explicit
+
+open issue (§17) rather than an assumption baked into the spec.
+
+Fixed the C#/.NET vs.  python-can  inconsistency. Standardised on
+
+C-
+
+6
+
+C-
+
+7
+
+C-
+
+8
+
+C-
+
+9
+
+C-
+
+10
+
+Transport
+
+.NET with vendor CAN APIs via P/Invoke, and made ISO-TP (ISO
+
+15765-2) segmentation and the DoIP routing-activation handshake
+
+explicit requirements (new §8).
+
+Block size is now derived from the RequestDownload (0x34)
+
+Reflash
+
+response  maxNumberOfBlockLength , not a hard-coded 2 KB default.
+
+Full download sequence and DTC-suppression step (0x85) specified.
+
+Reference
+
+Added a UDS service + NRC reference (new §6) the engine
+
+implements against.
+
+Strengthened testing/validation for safety-critical ECUs (ADCU_MCU,
+
+Safety
+
+ACU, dual EPS) and irreversible operations; added bench-simulator
+
+and flash voltage-stability requirements (new §13).
+
+Session
+
+Added a TesterPresent (0x3E) keep-alive requirement for long-
+
+running operations (reflash, key learning), beyond the connection test.
+
+Two items remain blocked pending one complete key/reflash flow file ( Write VIN.xml ,
+
+Write configword.xml , or the full  adds new key.xml ): the exact request-side element
+
+names, and the  ResponseStatus  enum. See §17.
+
+1. Executive Summary
+
+The ROX Offline Diagnostic Suite is a professional, self-contained Windows desktop
+
+application for automotive workshops, fleet maintenance, and independent repair shops
+
+servicing the R11_Oversea platform. It delivers full diagnostics, guided special functions,
+
+and secure MCU reflashing with no internet connection required.
+
+The suite consumes the OEM data package directly — the  R11_Oversea.xml  vehicle profile,
+
+the per-ECU folder tree, the XML flow scripts, and the reflash sequences — and translates
+
+OEM-defined procedures into wizard-style workflows driven by a built-in flow interpreter.
+
+Security material (seed-key) is executed locally through a pluggable module the user
+
+supplies; no OEM cryptographic algorithms are embedded in the application, keeping it
+
+compliant with OEM tool policy and legally clean.
+
+The platform being serviced is not an ordinary car. Its architecture — dedicated
+
+autonomous-driving controller with its own MCU ( ADCU / ADCU_MCU ), four corner radars
+
+( SRR_FL/FR/RL/RR ) plus front radar ( MRR_F ), an automotive-Ethernet/DoIP backbone, and
+
+redundant electric steering ( EPS  +  EPS_FD ) — is the signature of an L2++/L3 autonomy
+
+design. This raises the stakes on reflashing and security-gated writes and shapes the safety
+
+requirements in §13.
+
+The application serves both novice technicians (guided workflows) and expert engineers
+
+(raw-UDS console).
+
+2. Product Scope and Objectives
+
+2.1 In-Scope
+
+Reading and clearing DTCs across all ECUs, with automatic read-back verification and
+
+live-fault detection.
+
+Executing guided special functions via the flow engine: IMMO key add/delete, key
+
+pairing, key duplication, VIN writing, config-word writing, IMMO security-constant
+
+writing, TPMS matching, window/sunroof self-learning, ECU reset.
+
+MCU firmware reflashing with chunked download sized from the ECU’s declared block
+
+length, response-pending handling, checksum/CRC verification, and error recovery.
+
+Automatic ECU discovery and vehicle-profile loading from  R11_Oversea.xml  and the
+
+ECU folder tree.
+
+CAN (ISO 15765, with ISO-TP segmentation) and DoIP (ISO 13400, with routing
+
+activation) transport.
+
+Offline security access via a user-supplied local seed-key module (DLL or script)
+
+through a defined call boundary.
+
+Guided GUI plus an expert raw-UDS console.
+
+Session logging, audit trail, and reporting.
+
+2.2 Out-of-Scope (this version)
+
+Online cloud services, VIN decoding, or vehicle-history lookup.
+
+Vehicle platforms other than R11_Oversea (architecture is XML-driven, so future profiles
+
+are additive — see NFR Scalability).
+
+Wireless (Bluetooth/Wi-Fi) communication — wired OBD-II only.
+
+Oscilloscope / live-parameter graphing beyond DTC and DID reads.
+
+Multi-vehicle simultaneous diagnostics.
+
+Any embedded OEM seed-key algorithm — supplied by the user by design (§7, §17).
+
+2.3 Objectives
+
+Accuracy — correctly interpret every OEM-defined UDS service and flow-control
+
+construct, including the two parser quirks in §5.
+
+Reliability — graceful handling of timeouts, negative responses, response-pending
+
+loops, and partial reflash.
+
+Efficiency — DTC read < 5 s per ECU; reflash throughput ≥ 50 KB/s.
+
+Security & compliance — all security material on-premise; audited; no network egress.
+
+3. Target Audience / Personas
+
+Persona
+
+Description
+
+Goals
+
+Service
+
+Workshop mechanic,
+
+Read/clear codes, run guided functions without
+
+Technician
+
+basic computer skills
+
+knowing UDS internals
+
+Diagnostic
+
+Engineer
+
+Advanced user who
+
+Inspect raw UDS, drive the flow engine in
+
+understands ECU
+
+manual/step mode, configure the security
+
+comms
+
+module
+
+Fleet
+
+Oversees multiple
+
+Generate diagnostic and warranty reports, track
+
+Manager
+
+vehicles
+
+ECU health
+
+Tool
+
+Administrator
+
+Workshop IT
+
+Install/update, manage licence, configure
+
+interfaces and security-module path
+
+4. Functional Requirements
+
+Mandatory unless marked (Optional).
+
+FR-01: Vehicle Profile Loading
+
+ID
+
+Description
+
+Priority
+
+Parse  R11_Oversea.xml  ( ETSData → Vehicle → Buses ) to extract bus
+
+FR-
+
+01.1
+
+definitions: CAN pins (H=6, L=14), 500 kbps; DoIP pins (RX 3/11, TX
+
+High
+
+12/13, activation 8), IPv4, ProtocolVersion, NetworkType
+
+Discover all ECU folders, read their internal XML, and build a registry of
+
+ECUs with logical/diagnostic addresses and transport type (CAN vs DoIP)
+
+High
+
+Allow manual selection of a specific ECU for targeted operations
+
+Medium
+
+Present the decoded architecture map (domain controllers, ADAS radars,
+
+body/chassis modules) for operator orientation
+
+FR-02: Communication Interface & Transport
+
+ID
+
+Description
+
+Drop-down selection of hardware interface (USB-CAN adapter, DoIP
+
+Ethernet adapter)
+
+For DoIP: manual IP/subnet/gateway configuration or DHCP; perform the
+
+DoIP routing-activation handshake (payload 0x0005 → 0x0006) before
+
+High
+
+any UDS traffic
+
+For CAN: channel + baudrate selection (default 500 kbps); implement
+
+ISO-TP (ISO 15765-2) multi-frame segmentation with flow-control
+
+High
+
+frames, STmin and BlockSize handling
+
+Test connection by sending TesterPresent (0x3E) and report link status
+
+High
+
+Maintain session with a periodic TesterPresent keep-alive (S3 timer, ~2 s
+
+interval) during any long-running operation
+
+FR-
+
+01.2
+
+FR-
+
+01.3
+
+FR-
+
+01.4
+
+FR-
+
+02.1
+
+FR-
+
+02.2
+
+FR-
+
+02.3
+
+FR-
+
+02.4
+
+FR-
+
+02.5
+
+FR-03: DTC Management (Detect & Clear)
+
+ID
+
+Description
+
+FR-
+
+03.1
+
+Read DTCs from a selected ECU via  19 02 FF
+
+(reportDTCByStatusMask, mask 0xFF); parse the repeating 4-byte
+
+High
+
+records and decode the 3 code bytes to SAE J2012 (P/C/B/U) format
+
+Decode the status byte bitfield per record (confirmed=bit3,
+
+FR-
+
+pending=bit2, testFailed=bit0, warningIndicatorRequested=bit7, etc.) and
+
+High
+
+Low
+
+Priority
+
+High
+
+High
+
+Priority
+
+03.2
+
+display in a sortable table: Code, Status, Raw Hex, Description (user-
+
+editable)
+
+FR-
+
+03.3
+
+FR-
+
+03.4
+
+FR-
+
+03.5
+
+FR-
+
+03.6
+
+FR-
+
+03.7
+
+Support an all-ECU scan that loops the registry and aggregates results
+
+High
+
+Clear DTCs via  14 FF FF FF  (all groups); enter extended session ( 10
+
+03 ) first where the ECU requires it
+
+High
+
+Read → Clear → Read-back: capture DTCs before clearing (for the
+
+record), clear, then automatically re-read. Flag any DTC that re-sets
+
+High
+
+immediately as a live/active fault, distinct from a cleared stale code
+
+If clearing requires SecurityAccess, route through the security module
+
+(FR-06) or prompt for a manual key
+
+(Optional) Export DTC report as PDF or CSV
+
+High
+
+Low
+
+FR-04: Guided Special Functions (Flow Engine)
+
+See §5 for the schema this engine executes and §6 for the service/NRC reference.
+
+ID
+
+Description
+
+Priority
+
+FR-
+
+04.1
+
+FR-
+
+04.2
+
+FR-
+
+04.3
+
+FR-
+
+04.4
+
+Load any flow XML from the special-functions directory ( adds new
+
+key.xml ,  Write VIN.xml ,  Write configword.xml ,  TPMS tire
+
+High
+
+pressure matching.xml , etc.) via browser or menu
+
+Parse the flow into an in-memory AST ( FlowConfiguration →
+
+Processes → Process → ChildStep … ) and render it as a step
+
+High
+
+sequence with instructions and progress
+
+Execute UDS requests (0x10, 0x27, 0x2E, 0x2F, 0x31, 0x22, …) per the
+
+flow, resolving  IsVariable="true"  operands against the runtime
+
+High
+
+variable store and concatenating payloads
+
+Evaluate  If → Condition → OneCondition  branches against
+
+ResponseStatus  and other variables. Honour the two parser quirks:
+
+treat a trailing  ConnectSign  as a no-op, and treat consecutive  If
+
+High
+
+blocks testing the same variable against different literals as an OR-set of
+
+acceptable states (§5.4)
+
+Show per-step status (success/failure/retry) with human-readable NRC
+
+FR-
+
+04.5
+
+FR-
+
+04.6
+
+FR-
+
+04.7
+
+decoding (e.g. “Security denied — NRC 0x33”, “Exceeded attempts —
+
+High
+
+NRC 0x36, delay required”)
+
+Support pause / resume / cancel and a manual step-through mode for
+
+engineering/debug
+
+Medium
+
+Log every UDS request/response per flow execution
+
+High
+
+FR-05: MCU Reflashing
+
+ID
+
+Description
+
+Priority
+
+High
+
+FR-
+
+05.1
+
+FR-
+
+05.2
+
+FR-
+
+05.3
+
+FR-
+
+05.4
+
+FR-
+
+05.5
+
+FR-
+
+05.6
+
+FR-
+
+05.7
+
+Select a firmware binary ( .bin ,  .hex ,  .srec ) for a target ECU (e.g.
+
+EMS, ADCU_MCU)
+
+Parse the reflash flow XML ( ROX_MCU_Reflash_Flow 0.98.xml ) for the
+
+pre-flash sequence: session control ( 10 02 / 10 03 ), DTC suppression
+
+( 85 02  ControlDTCSetting off), SecurityAccess (0x27), pre-
+
+High
+
+programming condition/ checkDependencies  routines ( 31 01 … ), and
+
+memory erase ( 31 01 <eraseRoutine> )
+
+Execute RequestDownload ( 0x34 ), sending the address/size from the
+
+flow or user input, and read  maxNumberOfBlockLength  from the 0x34
+
+High
+
+positive response to size transfer blocks
+
+Split firmware into blocks of the declared size and send each via
+
+TransferData ( 0x36 <blockSequenceCounter> <data> ), incrementing
+
+the sequence counter (wraps 0xFF→0x00). Handle NRC 0x78 (response
+
+High
+
+pending) with wait-and-retry; abort on NRC 0x73 (wrong block sequence
+
+counter)
+
+After all blocks, send RequestTransferExit ( 0x37 ) and run the post-flash
+
+checksum/ checkMemory  routine ( 31 01 …  /  31 03 … )
+
+High
+
+Perform CRC/checksum verification where the flow defines it; on
+
+mismatch, abort and report without leaving the ECU in an unknown state
+
+High
+
+where avoidable
+
+Visual progress bar with throughput and estimated time remaining
+
+High
+
+FR-
+
+Multi-step confirmation and explicit bricking-risk warning; block reflash if
+
+High
+
+05.8
+
+battery voltage is below threshold (see NFR/§13)
+
+FR-
+
+05.9
+
+(Optional) Rollback to previous firmware if a backup image exists
+
+Low
+
+FR-06: Security Access
+
+ID
+
+Description
+
+For any operation requiring UDS SecurityAccess (0x27): intercept  27
+
+<odd>  requestSeed, extract the seed from the  67 <odd> <seed>
+
+response, hand it to the security module, and send back  27 <even>
+
+<key>
+
+Configuration pane to point at the seed-key library (e.g.  seedkey.dll )
+
+and test it against a sample seed
+
+Cache the granted security state per session so repeat requests within
+
+the session skip re-authentication
+
+Handle security lockout: on NRC 0x36 (exceededNumberOfAttempts) /
+
+0x37 (requiredTimeDelayNotExpired), surface the required delay and
+
+High
+
+prevent hammering
+
+If no library is supplied, allow manual key entry (offline engineering)
+
+Low
+
+FR-07: User Interface and Workflow
+
+ID
+
+Description
+
+Modern WPF desktop UI with tab/side-panel navigation
+
+Dashboard: vehicle identification, connected-ECU list with health
+
+status, quick actions
+
+“Guided Flows” wizard module with step-by-step instruction panel
+
+High
+
+“Reflash” module: firmware picker, progress, status log
+
+High
+
+FR-
+
+06.1
+
+FR-
+
+06.2
+
+FR-
+
+06.3
+
+FR-
+
+06.4
+
+FR-
+
+06.5
+
+FR-
+
+07.1
+
+FR-
+
+07.2
+
+FR-
+
+07.3
+
+FR-
+
+07.4
+
+Priority
+
+High
+
+High
+
+Medium
+
+Priority
+
+High
+
+High
+
+Medium
+
+Low
+
+Priority
+
+High
+
+FR-
+
+07.5
+
+FR-
+
+07.6
+
+FR-
+
+07.7
+
+FR-
+
+08.1
+
+FR-
+
+08.2
+
+FR-
+
+08.3
+
+FR-
+
+08.4
+
+Expert console: raw UDS request/response entry and live trace for
+
+Medium
+
+Diagnostic Engineers
+
+Persistent settings (interface, IP, security-library path, log location) in
+
+the user profile
+
+Dark/light theme
+
+FR-08: Logging and Reporting
+
+ID
+
+Description
+
+Auto-log every session: timestamps, ECUs accessed, DTCs read/cleared,
+
+flows executed, reflash checksums
+
+“Report” generation (session summary for warranty claims) as PDF
+
+Medium
+
+Export raw UDS logs as  .txt  /  .csv
+
+Never write plaintext keys or full seeds to logs; record security
+
+operations by event and result only
+
+Medium
+
+High
+
+FR-09: Immobilizer Key Functions (Pairing & Duplication)
+
+These share the same flow skeleton as  adds new key.xml  and execute only after a valid
+
+SecurityAccess grant ( 67 <even> ). Routine IDs and DIDs are OEM-specific values that
+
+come from the data package, not embedded logic.
+
+ID
+
+Description
+
+Priority
+
+Key Pairing — teach the immobilizer a new key identity. Sequence:  10
+
+03  → SecurityAccess → read current key count ( 22 <keyCountDID>  →
+
+var  keyCount ) → user prompt (“insert new key, ignition ON”) → learn
+
+High
+
+routine ( 31 01 <learnRoutineId> ) → poll  31 03 <routineId>  while
+
+pending → verify  keyCount  incremented →  10 01
+
+Key Duplication — provision a spare and pair it onto the vehicle via the
+
+same skeleton; the duplicate ends as a learned key. Payload differs from
+
+High
+
+pairing; skeleton is identical
+
+FR-
+
+09.1
+
+FR-
+
+09.2
+
+FR-
+
+09.3
+
+FR-
+
+09.4
+
+FR-
+
+09.5
+
+Key Deletion — remove a key identity from the immobilizer ( deleting
+
+keys.xml  flow), security-gated, with read-back of the resulting key
+
+High
+
+count
+
+Guard rails: display current vs. resulting key count, require confirmation
+
+before any write, and surface immobilizer lockout states (NRC
+
+High
+
+0x36/0x37) clearly
+
+All key operations write a full audit-trail entry (§7, §11)
+
+High
+
+5. Flow Engine Specification (Reverse-Engineered
+
+FlowConfiguration  Schema)
+
+This section is the authoritative reference for the flow interpreter. It is split into observed
+
+(directly evidenced from the flow fragment) and reconstructed (inferred from standard
+
+guided-function engine design and flagged as such). Confirm the reconstructed request-
+
+side names against one complete flow file before freezing the parser (§17).
+
+5.1 Element Containment (observed)
+
+Innermost → outermost, exactly as seen:
+
+LeftValue  @IsVariable @Value
+
+OpSign     @Value
+
+RightValue @IsVariable @Value
+
+ConnectSign @Value
+
+  → OneCondition → Condition → If @Description
+
+    → ChildStep → EcuService → ChildStep → Process → Processes → FlowConfiguration
+
+Confirmed attribute facts:
+
+LeftValue  /  RightValue :  IsVariable  (boolean) +  Value .
+
+OpSign   @Value : comparison operator;  Equal  observed (enum:  Equal | NotEqual |
+
+Greater | Less | GreaterOrEqual | LessOrEqual , reconstructed).
+
+ConnectSign   @Value : boolean join;  OR  observed ( AND  reconstructed).
+
+If   @Description : label attribute; empty is written as the literal string  "null" .
+
+ResponseStatus : a built-in runtime variable the engine populates after each
+
+EcuService .
+
+5.2 Reconstructed Full Tree
+
+FlowConfiguration                        [root]
+
+└─ Processes                             [container]
+
+   └─ Process            [1..n]          one guided function
+
+      ├─ @Name / @Description            (reconstructed)
+
+      └─ ChildStep       [1..n, RECURSIVE — steps nest steps]
+
+         ├─ @Description                 ("null" pattern)
+
+         ├─ EcuService   [0..1]          one UDS transaction
+
+         │  ├─ @Ecu / @Target            target module (reconstructed)
+         │  ├─ «REQUEST SIDE»            ⚠ not in fragment — must exist
+
+         │  │   ├─ ServiceId             0x27 / 0x2E / 0x31 / 0x22 …
+
+         │  │   ├─ SubFunction
+
+         │  │   └─ RequestData / DID     from variables or literals
+
+         │  └─ ChildStep                 response handling
+
+         │     └─ If @Description
+
+         │        ├─ Condition
+
+         │        │  └─ OneCondition [1..n, joined by ConnectSign]
+
+         │        │     ├─ LeftValue   @IsVariable @Value
+
+         │        │     ├─ OpSign      @Value
+
+         │        │     ├─ RightValue  @IsVariable @Value
+
+         │        │     └─ ConnectSign @Value
+         │        └─ «THEN / ELSE body» ⚠ reconstructed
+
+         └─ «other step types»           ⚠ reconstructed — see 5.5
+
+5.3 Execution / Variable Model
+
+The engine maintains a runtime key-value store.  IsVariable="true"  means “resolve
+
+Value  against the store at execution time”;  false  means literal.
+
+ResponseStatus  is the first confirmed reserved system variable. Others the engine
+
+must maintain: last raw response, last NRC, session state, security state, extracted
+
+operands (e.g.  seed ,  keyCount ).
+
+After every  EcuService , the engine writes  ResponseStatus  (and the raw response)
+
+before evaluating that service’s response-side  If  blocks.
+
+5.4 Two Parser Rules (both derived from the observed fragment)
+
+1. Trailing  ConnectSign  is a no-op. The editor emits  ConnectSign  on every
+
+OneCondition , including the last one in a  Condition , where it has no following sibling.
+
+The parser must not let a trailing join dangle into the next node.
+
+2. Consecutive- If  = OR-set of acceptable states. The fragment contains back-to-back
+
+If  blocks testing  ResponseStatus Equal 2 , then  Equal 3 . This is the acceptance
+
+idiom: rather than one  If  with ORed conditions, the tool emits one  If  per acceptable
+
+response state. Treat  ResponseStatus ∈ {2,3}  as “service accepted, continue.”
+
+5.5 Node Types the Interpreter Must Add (beyond  EcuService  +  If )
+
+The observed file exposed only the response/condition tail. Real key and reflash flows
+
+require:
+
+SecurityAccess node — a specialised  EcuService  that emits  27 <odd> , routes the
+
+seed to the external security module, and returns  27 <even> <key> . Single most
+
+important new node.
+
+UserPrompt node — blocking operator interaction (“insert key”, “cycle ignition”,
+
+“remove key within N s”) with a timeout.
+
+Assign / Extract node — the write side of the variable store: pull specific bytes from a
+
+response into a named variable ( seed ,  keyCount ,  sessionState ).
+
+Loop node — iterate the ECU list (DTC scan) and poll the pending state ( 31 03 …  until
+
+the routine reports complete).
+
+An interpreter handling only  EcuService  +  If  will parse the simple flows and fail on the
+
+key/reflash flows.
+
+5.6 ResponseStatus Enum — Hypothesis, Not Confirmed
+
+Because the flow accepts  2  and  3  (not  0 / 1 ), the encoding is likely not the naïve  0 =
+
+OK . Working hypothesis:  1 = negative/NRC ,  2 = positive response ,  3 = positive-with-
+
+pending-resolved (0x78 cleared) . This must be confirmed from a complete flow — the
+
+reflash flow will settle it, since a RequestDownload/TransferData sequence has to loop
+
+explicitly on the pending state. Tracked in §17.
+
+6. UDS Service & NRC Reference (Engine Implements Against
+
+This)
+
+6.1 Services in Use
+
+SID
+
+Service
+
+Use in ROX
+
+0x10
+
+DiagnosticSessionControl
+
+01  default,  02  programming,  03  extended —
+
+precede clears, key ops, reflash
+
+0x11
+
+ECUReset
+
+ECU_RESET.xml
+
+0x14
+
+ClearDiagnosticInformation
+
+Clear DTCs ( FF FF FF  = all)
+
+0x19
+
+ReadDTCInformation
+
+02  reportDTCByStatusMask — detect DTCs
+
+0x22
+
+ReadDataByIdentifier
+
+Read DIDs (key count, VIN, config word, status)
+
+0x27
+
+SecurityAccess
+
+Seed/key handshake (odd=requestSeed,
+
+even=sendKey)
+
+0x28
+
+CommunicationControl
+
+Silence bus traffic during flash where required
+
+0x2E
+
+WriteDataByIdentifier
+
+Write VIN, config word, IMMO constants
+
+0x2F
+
+InputOutputControlByIdentifier
+
+Actuator/self-learning routines
+
+0x31
+
+RoutineControl
+
+01  start,  03  requestResults — erase,
+
+checkDependencies, key-learn, checkMemory
+
+0x34
+
+RequestDownload
+
+Begin reflash; response yields
+
+maxNumberOfBlockLength
+
+0x36
+
+TransferData
+
+Block transfer (sequence-counted)
+
+0x37
+
+RequestTransferExit
+
+End transfer
+
+0x3E
+
+TesterPresent
+
+Connection test + session keep-alive
+
+0x85
+
+ControlDTCSetting
+
+02  off — suppress DTCs during reflash
+
+6.2 Negative Response Codes (decode + behaviour)
+
+Negative response format:  7F <SID> <NRC> .
+
+NRC
+
+Meaning
+
+Engine behaviour
+
+0x11
+
+serviceNotSupported
+
+Abort step, report
+
+0x13
+
+incorrectMessageLength/format
+
+Abort, likely flow/data bug
+
+0x22
+
+conditionsNotCorrect
+
+Retry after precondition
+
+(session/voltage/speed)
+
+0x24
+
+requestSequenceError
+
+0x31
+
+requestOutOfRange
+
+Restart sequence from last valid
+
+step
+
+Abort, report (bad
+
+DID/address/routine)
+
+0x33
+
+securityAccessDenied
+
+Trigger/repeat SecurityAccess
+
+0x35
+
+invalidKey
+
+0x36
+
+exceededNumberOfAttempts
+
+Key wrong — check security
+
+module
+
+Lockout — stop, surface delay
+
+(FR-06.4)
+
+0x37
+
+requiredTimeDelayNotExpired
+
+Wait the stated delay before retry
+
+0x72
+
+generalProgrammingFailure
+
+Reflash failure — abort, warn
+
+0x73
+
+wrongBlockSequenceCounter
+
+Abort transfer (FR-05.4)
+
+0x78
+
+responsePending
+
+Wait and re-poll (do not treat as
+
+failure)
+
+0x7E /
+
+0x7F
+
+(sub)serviceNotSupportedInActiveSession
+
+Change session, retry
+
+7. Security Architecture
+
+Posture (unchanged and deliberate): the application embeds no OEM seed-key
+
+algorithm. Security is executed by a user-supplied module the operator is licensed to hold.
+
+This keeps ROX compliant with OEM tool policy.
+
+7.1 The Call Boundary
+
+The flow’s SecurityAccess node (§5.5) is the only place security material crosses the
+
+boundary:
+
+Flow (SecurityAccess node)
+
+   │  27 <odd> requestSeed  ──────────────►  ECU
+
+   │  67 <odd> <seed>       ◄──────────────  ECU
+
+   │  seed  ──────────►  [ Security Module ]     (external DLL / script)
+
+   │  key   ◄──────────  ComputeKey(seed[], length) : key[]
+
+   │  27 <even> <key>       ──────────────►  ECU
+
+   │  67 <even>             ◄──────────────  ECU  (access granted)
+
+Interface: exported  ComputeKey(seed, length) -> key , called via P/Invoke.
+
+The interpreter never computes the key; it only marshals seed out and key back.
+
+keyCount  / routine IDs / DIDs used by pairing, duplication and deletion are data-
+
+package values, not application logic.
+
+7.2 Controls
+
+Licence check — offline licence-key validation to prevent unauthorised use.
+
+Secure storage — security-module path stored via Windows DPAPI (encrypted).
+
+Audit trail — every security-gated operation (0x27, key write/delete, VIN write, reflash)
+
+logged with timestamp, operation, ECU, and result. No plaintext keys or full seeds in
+
+logs (FR-08.4).
+
+No network egress — verified in an isolated network.
+
+8. Transport Layer Specification
+
+Resolves the v1.0 C#/ python-can  inconsistency: the stack is .NET, and CAN uses vendor
+
+driver APIs via P/Invoke — not  python-can .
+
+8.1 CAN (ISO 15765)
+
+Interfaces via vendor APIs (PCAN-Basic, Kvaser CANlib, or Vector XL Driver) through
+
+P/Invoke.
+
+ISO-TP (ISO 15765-2) is mandatory: DTC lists, DIDs and flash blocks exceed a single
+
+8-byte frame, so the transport must implement First/Consecutive frames, Flow-Control
+
+frames, and honour BlockSize and STmin. Block-sequence and padding handled at this
+
+layer, below the UDS client.
+
+Default 500 kbps (from  R11_Oversea.xml ), channel selectable.
+
+8.2 DoIP (ISO 13400)
+
+Raw TCP sockets ( System.Net.Sockets ), default port 13400, over the DoIP pins
+
+(activation line = pin 8).
+
+Routing-activation handshake required before UDS: optional vehicle-
+
+announcement/identification (0x0004), then routing-activation request (0x0005) →
+
+response (0x0006). Diagnostic messages are payload type 0x8001 with 0x8002 (ack) /
+
+0x8003 (nack).
+
+Manual IP/subnet/gateway or DHCP (FR-02.2).
+
+The Transport Abstraction Layer exposes one interface to the UDS client
+
+( SendRequest(bytes) → response bytes ), hiding CAN-vs-DoIP so flows and the UDS client
+
+are transport-agnostic.
+
+9. Non-Functional Requirements
+
+NFR
+
+Description
+
+Performance
+
+DTC read ≤ 5 s/ECU; reflash ≥ 50 KB/s
+
+Metric/Constraint
+
+From user action
+
+to result
+
+Reliability
+
+Offline
+
+Security
+
+Safety
+
+Usability
+
+Graceful timeouts; auto-retry ≤ 3× before user
+
+< 1%
+
+notification; correct 0x78 looping
+
+crash/session
+
+100% functional with no internet; zero external API
+
+Verified in isolated
+
+calls
+
+network
+
+Seed-key local only; no plaintext keys in logs;
+
+OEM security
+
+licensed application
+
+policy compliance
+
+Refuse reflash below battery-voltage threshold;
+
+explicit warnings on safety-critical ECUs
+
+See §13
+
+Minimum clicks for routine tasks; NRC shown in plain
+
+language
+
+≥ 90%
+
+satisfaction, 5
+
+technicians
+
+Portability
+
+Self-contained .NET 6 (or 4.8); Windows 10/11
+
+Single deployable
+
+Maintainability
+
+UI; unit tests on core
+
+Clear separation of parsing / transport / flow engine /
+
+Documented
+
+Scalability
+
+New vehicle profiles added by dropping XML in the
+
+profiles folder, no code change
+
+architecture
+
+Add  *.xml
+
+10. Use Cases
+
+UC-01: Read and Clear DTCs
+
+Actor: Service Technician. Precondition: vehicle connected, profile loaded.
+
+1. Select ECU (or “all ECUs”).
+
+2. Click Read DTCs → app sends  19 02 FF , decodes records and status bits, displays list.
+
+3. Click Clear DTCs → app enters  10 03  if needed, sends  14 FF FF FF .
+
+4. If security is required, route via the security module or prompt for a key.
+
+5. App re-reads and flags any code that re-sets immediately as a live fault.
+
+6. Show “DTCs cleared (N stale cleared, M live remaining)”.
+
+UC-02: Execute a Special Function Flow (corrected)
+
+Actor: Service Technician. Precondition: vehicle connected, flow XML available.
+
+1. Open Guided Functions, select  adds new key.xml .
+
+2. App parses the flow to an AST and shows the first instruction.
+
+3. Technician follows prompts (e.g. “Insert new key, ignition ON”).
+
+4. App executes UDS requests per flow, resolving variables and evaluating conditions.
+
+5. Continue on  ResponseStatus ∈ {accepted set}  (observed:  {2,3} ); on a value outside
+
+the accepted set, follow the flow’s failure path (retry/abort). (v1.0 wrongly hard-coded
+
+3  as failure.)
+
+6. On completion, show success and log the operation.
+
+UC-03: Perform MCU Reflash
+
+Actor: Diagnostic Engineer. Precondition: vehicle connected, firmware ready, battery
+
+maintainer attached.
+
+1. Open Reflash, select target ECU, load firmware.
+
+2. App loads the reflash flow and shows pre-flash warnings; engineer confirms.
+
+3. App runs pre-flash steps:  10 02/03 ,  85 02  (DTCs off),  27  security, precondition +
+
+erase routines.
+
+4. Sends  0x34 , reads  maxNumberOfBlockLength  from the response.
+
+5. Streams  0x36  blocks (sequence-counted), auto-waiting on 0x78; progress +
+
+throughput shown.
+
+6. Sends  0x37 , runs checksum/ checkMemory  routine.
+
+7. Shows “Reflash successful” or detailed error; logs with checksum.
+
+UC-04: Key Pairing (new)
+
+Actor: Service Technician / locksmith. Precondition: vehicle connected, security module
+
+configured, new key present.
+
+1. Open Key Functions → Pairing.
+
+2. App runs  10 03  → SecurityAccess (seed→module→key) → reads current  keyCount .
+
+3. Prompts “Insert new key, ignition ON”.
+
+4. Runs the learn routine ( 31 01 … ), polling  31 03 …  while pending.
+
+5. Verifies  keyCount  incremented, restores session ( 10 01 ).
+
+6. Shows before/after key count, writes audit entry.
+
+11. System Architecture (High-Level)
+
+Modules:
+
+1. Profile Manager — loads  R11_Oversea.xml  + ECU folders, builds the internal registry.
+
+2. Transport Abstraction Layer — CAN (ISO-TP over vendor API) and DoIP (routing-
+
+activated sockets) behind one interface (§8).
+
+3. UDS Client — builds requests, parses responses, decodes NRCs (§6).
+
+4. Flow Engine — parses flow XML → AST, executes step-by-step, evaluates conditions,
+
+substitutes/extracts variables, runs the node types in §5.5.
+
+5. Reflash Controller — extends the Flow Engine with block sizing (from 0x34), sequence
+
+counting, progress, CRC.
+
+6. Security Provider — loads the user-supplied module, marshals seed/key across the
+
+boundary (§7), caches session state.
+
+7. GUI (WPF) — guided workflows, expert console, logging, reporting.
+
+8. Logger — structured logs + audit trail to disk.
+
+Data flow:
+
+User → GUI → FlowEngine/ReflashController → UDSClient → Transport → Vehicle
+
+Vehicle → Transport → UDSClient → FlowEngine → GUI
+
+                                   │
+
+                          SecurityProvider (seed↔key, on 0x27)
+
+Technology stack:
+
+Language: C# (.NET 6), for robust Windows desktop + XML handling.
+
+CAN: vendor driver API (PCAN-Basic / Kvaser CANlib / Vector XL) via P/Invoke; ISO-TP
+
+implemented in-app or via the vendor’s ISO-TP layer.
+
+DoIP:  System.Net.Sockets  with a DoIP state machine.
+
+XML:  System.Xml  /  System.Xml.Linq .
+
+Config:  System.Text.Json  (or Newtonsoft) for  settings.json .
+
+Dialogs: Ookii.Dialogs for file/folder pickers.
+
+Build: self-contained single executable (.NET); AOT optional (note: AOT + P/Invoke to
+
+vendor DLLs is supported, validate per driver).
+
+12. UI/UX Overview
+
+Main Window — tab/ribbon style.
+
+Dashboard — connected vehicle, ECU list with green/red health, quick actions.
+
+Diagnostics — ECU drop-down, Read/Clear, DTC table with status decode, export.
+
+Guided Flows — flow browser, start/stop, step-by-step instruction panel, manual
+
+step-through toggle.
+
+Key Functions — pairing / duplication / deletion with before/after key-count display
+
+and confirmations.
+
+Reflash — ECU + firmware picker, progress bar, status log, voltage guard.
+
+Expert Console — raw UDS entry + live trace.
+
+Settings — interface/IP/CAN channel, security-module path, log location.
+
+Dialogs — confirmations for clear/reflash/key-write; error pop-ups with decoded NRC.
+
+Status bar — comms status, session timer, keep-alive indicator.
+
+13. Testing & Validation Strategy
+
+Because the platform includes safety-critical ECUs (ADCU_MCU, ACU airbag, dual
+
+EPS / EPS_FD ) and irreversible operations (key delete, VIN write, reflash), validation is a
+
+first-class requirement, not an afterthought.
+
+Bench / restbus simulator — a UDS/ECU simulator (or restbus) for developing and
+
+regression-testing DTC, flow-engine, security-boundary and reflash logic without a live
+
+vehicle. Mandatory for CI of the core modules.
+
+Flow-engine unit tests — cover the two parser quirks (§5.4), variable
+
+resolution/extraction, condition grouping, and the pending-poll loop, using captured flow
+
+XML.
+
+Golden traces — record real request/response traces and replay them to detect
+
+regressions in UDS/NRC handling.
+
+Reflash safety gate — reflash blocked below a configurable battery-voltage threshold;
+
+require a battery-maintainer confirmation; validate 0x78 looping and block-sequence
+
+wrap on the simulator before any live flash.
+
+Key-function dry run — verify key-count read-back and lockout handling (0x36/0x37)
+
+on the simulator before enabling on a vehicle.
+
+Destructive-op confirmations — automated tests that every irreversible operation is
+
+gated behind explicit confirmation and produces an audit entry.
+
+14. Deployment and Maintenance
+
+Installer — MSI placing the executable + default XML data package under  Program
+
+Files\ROXDiagnostic .
+
+Updates — manual (replace executable) to preserve the offline guarantee; no auto-
+
+update.
+
+Backup — auto-backup of  R11_Oversea.xml  and any modified data-package file before
+
+changes.
+
+Support — bundled PDF manual, in-app tooltips.
+
+15. Security & Compliance
+
+Offline licence-key validation.
+
+DPAPI-encrypted storage of the security-module path.
+
+Full audit trail on every security-gated operation (§7.2).
+
+No network traffic — no exfiltration surface.
+
+No embedded OEM cryptographic material (§7, §17).
+
+16. Success Metrics
+
+DTC read + clear (single ECU) ≤ 1 minute.
+
+Reflash success ≥ 95% under normal conditions.
+
+Flow-engine correctly executes all provided flow XML, including the two quirks, with
+
+zero mis-branches on the golden-trace suite.
+
+Pilot user satisfaction ≥ 4/5.
+
+Zero internet dependency — verified in an isolated network.
+
+17. Open Issues / Assumptions
+
+Resolved since v1.0
+
+Flow format is now specified (§5) from the observed fragment; the interpreter node set
+
+is enumerated (§5.5).
+
+ResponseStatus mis-handling from v1.0 removed (§10 UC-02, C-5).
+
+Transport ambiguity resolved to .NET + ISO-TP + DoIP routing activation (§8, C-6).
+
+Reflash block sizing corrected to  maxNumberOfBlockLength  (§FR-05.3, C-7).
+
+Still open — blocked on one complete key/reflash flow file ( Write VIN.xml ,  Write
+
+configword.xml , or full  adds new key.xml )
+
+O-1: Request-side element names. §5.2 marks the request side as reconstructed. One
+
+full flow will confirm the exact element/attribute names for ServiceId, SubFunction,
+
+RequestData/DID so the parser can be frozen.
+
+O-2: ResponseStatus enum. Confirm the meaning of  1/2/3  (§5.6); the reflash flow’s
+
+pending loop will settle it definitively.
+
+O-3: Additional node-type tags. Confirm the concrete XML tags for UserPrompt,
+
+Assign/Extract, and Loop nodes (their existence is certain from the key/reflash
+
+workflows; their exact tag names are not).
+
+Assumptions
+
+R11_Oversea.xml  and the ECU folders are present in the installation directory.
+
+The OBD-II interface is correctly wired and powered; a battery maintainer is used during
+
+reflash.
+
+Seed-key algorithms are not embedded, for legal reasons; the user supplies them (§7).
+
+Communication timeouts default to 5 s (adjustable in settings).
+
+Developed in C#/.NET for XML and serialisation strength.
+
+Appendix A — Glossary
+
+UDS — Unified Diagnostic Services (ISO 14229)
+
+ISO-TP — ISO 15765-2 transport (multi-frame CAN segmentation)
+
+DoIP — Diagnostics over IP (ISO 13400)
+
+DTC — Diagnostic Trouble Code
+
+DID — Data Identifier (0x22/0x2E operand)
+
+NRC — Negative Response Code
+
+RoutineControl — UDS 0x31 (start/stop/results)
+
+RequestDownload / TransferData / TransferExit — UDS 0x34 / 0x36 / 0x37 reflash
+
+sequence
+
+maxNumberOfBlockLength — max transfer block size, returned in the 0x34 response
+
+Seed-Key — SecurityAccess (0x27) handshake
+
+SecOC / SK — Secure Onboard Communication key material (“SK Brush Write”)
+
+IMMO — Immobilizer
+
+AST — Abstract Syntax Tree (flow parsing)
+
+ADCU / ADCU_MCU — Autonomous Driving Control Unit and its dedicated MCU
+
+SRR / MRR — Short-/Mid-Range Radar (corner and front ADAS sensors)
+
+EPS / EPS_FD — Electric Power Steering and its redundant/failover unit
+
+Appendix B — Reverse-Engineered Schema Quick Reference
+
+FlowConfiguration → Processes → Process → ChildStep(recursive)
+
+  ChildStep may contain:
+
+    EcuService  { request: SID/SubFunction/Data;  response: ChildStep → If … }
+
+    If @Description → Condition → OneCondition[1..n]
+
+        OneCondition: LeftValue@IsVariable@Value  OpSign@Value
+
+                      RightValue@IsVariable@Value ConnectSign@Value
+
+    (to add) SecurityAccessNode, UserPromptNode, AssignNode, LoopNode
+
+Rules:
+
+  • trailing ConnectSign = no-op
+
+  • consecutive If on same var/different literals = OR-set of accepted states
+  • IsVariable="true" ⇒ resolve against runtime store; ResponseStatus is reserved
+
+This PRD is a living document and will be updated as development progresses. v2.0
+
+incorporates the flow-format reverse-engineering and the pairing/duplication/DTC feature
+
+set from design review; the items in §17 are the remaining inputs needed to freeze the flow
+
+parser.
+
+

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Rox.Core/Rox.Core.csproj" />
+    <ProjectReference Include="../Rox.FlowEngine/Rox.FlowEngine.csproj" />
+    <ProjectReference Include="../Rox.Uds/Rox.Uds.csproj" />
+    <ProjectReference Include="../Rox.Security/Rox.Security.csproj" />
+    <ProjectReference Include="../Rox.Logging/Rox.Logging.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Rox.Core/Rox.Core.csproj" />
+    <ProjectReference Include="../Rox.FlowEngine/Rox.FlowEngine.csproj" />
+    <ProjectReference Include="../Rox.Uds/Rox.Uds.csproj" />
+  </ItemGroup>
+</Project>

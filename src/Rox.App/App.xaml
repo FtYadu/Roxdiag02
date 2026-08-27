@@ -1,0 +1,28 @@
+<Application x:Class="Rox.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:Rox.App.ViewModels"
+             xmlns:local="clr-namespace:Rox.App"
+             xmlns:views="clr-namespace:Rox.App.Views">
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ui:ThemesDictionary Theme="Dark" />
+        <ui:ControlsDictionary />
+      </ResourceDictionary.MergedDictionaries>
+
+      <local:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+      <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+
+      <!-- View-model → view mapping (DataTemplate-driven navigation) -->
+      <DataTemplate DataType="{x:Type vm:DashboardViewModel}"><views:DashboardView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:DiagnosticsViewModel}"><views:DiagnosticsView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:GuidedFlowsViewModel}"><views:GuidedFlowsView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:KeyFunctionsViewModel}"><views:KeyFunctionsView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:ReflashViewModel}"><views:ReflashView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:ExpertConsoleViewModel}"><views:ExpertConsoleView /></DataTemplate>
+      <DataTemplate DataType="{x:Type vm:SettingsViewModel}"><views:SettingsView /></DataTemplate>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

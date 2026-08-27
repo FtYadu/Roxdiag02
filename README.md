@@ -1,48 +1,63 @@
-# ROX Offline Diagnostic Suite — Core
+# ROX Offline Diagnostic Suite (Windows)
 
-Cross-platform .NET 8 core of the ROX / Polestones / Jishi **ROX 01 / Adamas** offline diagnostic
-suite (profile `R11_Oversea`). This repository is the engine room: the flow-configuration
-interpreter, the UDS/NRC layer, the vehicle-profile parser, and an in-process ECU simulator so the
-whole thing runs and is testable **with no vehicle and no special hardware**.
+A professional, **fully offline** Windows desktop diagnostic suite for the ROX / Polestones / Jishi
+**ROX 01 / Adamas** platform (profile `R11_Oversea`): full UDS diagnostics, guided special functions,
+immobilizer key programming, and MCU reflashing — with **no internet connection**.
 
-> The WPF desktop UI, the real CAN/DoIP hardware adapters (PCAN/Kvaser/Vector P-Invoke), the
-> user-supplied seed-key module, and firmware images are the Windows-side / external remainder.
-> See `docs/EXTERNAL_INPUTS.md`. Nothing here embeds any OEM security algorithm.
+The suite ships with a built-in **simulator**, so every function builds, tests, and demonstrates
+end-to-end with no vehicle and no special hardware. Talking to a real vehicle additionally requires the
+items in [`docs/EXTERNAL_INPUTS.md`](docs/EXTERNAL_INPUTS.md).
 
-## Build, test, run
+## Layout
 
-```bash
-# one-time: install .NET 8 SDK if needed (https://dot.net)
-dotnet build -c Release
-dotnet test  -c Release
-dotnet run   -c Release --project samples/Rox.Demo
+```
+ROXDiagnostic.sln            cross-platform core + service libraries (net8.0) — builds on Linux & Windows
+ ├─ src/
+ │   ├─ Rox.Core            UDS/NRC/DTC primitives
+ │   ├─ Rox.Profile         R11_Oversea profile parser
+ │   ├─ Rox.FlowEngine      FlowConfiguration XML → AST → interpreter (both quirks)
+ │   ├─ Rox.Simulator       in-proc UDS/ECU server (default target)
+ │   ├─ Rox.Transport       ITransport: in-house ISO-TP, DoIP state machine, PCAN/Kvaser/Vector adapters
+ │   ├─ Rox.Uds             stateful UDS client (session, keep-alive, 0x78 poll, retry)
+ │   ├─ Rox.Diagnostics     DTC read→clear→read-back + live-fault detection
+ │   ├─ Rox.Security        user-DLL seed-key provider, DPAPI, lockout, licence
+ │   ├─ Rox.KeyFunctions    pairing / duplication / deletion + guardrails + audit
+ │   ├─ Rox.Reflash         block sizing from 0x34, transfer loop, checksum, voltage gate
+ │   ├─ Rox.Logging         Serilog + audit sink + PDF/CSV reporting
+ │   └─ Rox.App             WPF/MVVM app (net8.0-windows) — builds on Windows
+ ├─ tests/Rox.Tests         62 xUnit tests
+ ├─ tests/Rox.GoldenTraces  record/replay regression fixtures
+ ├─ installer/Rox.Installer WiX v5 MSI (builds on Windows)
+ ├─ data/                   default R11_Oversea data package (profile + flow XMLs)
+ └─ docs/                   PRD, ARCHITECTURE, EXTERNAL_INPUTS, USER_MANUAL, PROGRESS
 ```
 
-## Projects
+## Build, test, demo (any OS with the .NET 8 SDK)
 
-| Project          | Responsibility |
-|------------------|----------------|
-| `Rox.Core`       | UDS service IDs, NRC table + recommended actions, UDS response parsing, DTC + J2012 decode |
-| `Rox.Profile`    | Parse the `R11_Oversea` ETSData profile (CAN + DoIP buses / pinout) |
-| `Rox.FlowEngine` | FlowConfiguration XML → AST → interpreter; variable store; all node types; both parser quirks |
-| `Rox.Simulator`  | In-process UDS/ECU server + a clearly-labelled **test-only** seed-key for the sim |
-| `Rox.Demo`       | Console walkthrough: profile parse, DTC read→clear→read-back, Add-Key guided flow |
-| `Rox.Tests`      | xUnit: NRC/DTC/UDS decode, profile parse, both quirks, end-to-end key flow, security-denied |
+```bash
+dotnet build ROXDiagnostic.sln -c Release
+dotnet test  ROXDiagnostic.sln -c Release      # 62 tests
+dotnet run   -c Release --project samples/Rox.Demo
+# or the one-command runner:
+bash build/demo.sh        # (build/demo.cmd on Windows)
+```
 
-## Flow engine — the two rules that matter
+## Build & run the Windows app + MSI (Windows only)
 
-Derived from the real captured flow fragment (see the PRD, schema §5.4):
+```powershell
+dotnet build   src/Rox.App/Rox.App.csproj -c Release
+dotnet publish src/Rox.App/Rox.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet build   installer/Rox.Installer/Rox.Installer.wixproj -c Release   # produces ROXDiagnostic.msi
+```
 
-1. **Trailing `ConnectSign` is a no-op.** The editor emits a connector on the last `OneCondition`
-   too; the interpreter never reads it.
-2. **Consecutive bare acceptance-`If` blocks on the same variable = an OR-set.** One `If` per
-   acceptable state. `ResponseStatus ∈ {2,3}` means "continue". The accepted-set and the
-   `ResponseStatus` value mapping are **configurable** (`FlowSemantics`), because that enum is an
-   open item — never hard-code it.
+The WPF UI (`net8.0-windows`) and the WiX MSI are Windows-only; the cross-platform core and all service
+libraries build and test on Linux and Windows alike. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-## Security boundary (non-negotiable)
+## Non-negotiables
 
-`ISecurityProvider.ComputeKey(seed, length)` is the *only* path to a key. The app ships no OEM
-algorithm. `Rox.Simulator` includes `TestSeedKey` / `TestSecurityProvider` purely so the handshake
-completes against the simulator — it is labelled test-only and has no security value. A real vehicle
-requires the operator's licensed module.
+- **Offline only** — the only network I/O is DoIP TCP/UDP; `build/check-no-network.sh` fails the build on
+  any banned outbound API or telemetry/auto-update package.
+- **No embedded OEM crypto** — keys come only from a user-supplied module via
+  `ISecurityProvider.ComputeKey`; the sim's `TestSecurityProvider` is clearly labelled and simulator-only.
+- **Safety on irreversible ops** — key delete, VIN/config write, and reflash require explicit confirmation
+  and a mandatory audit entry; reflash is voltage-gated.

@@ -1,0 +1,42 @@
+<!-- Sample flow matching the OBSERVED condition grammar. <Request> is the reconstructed
+     request-side adapter point (schema 5.2) and uses placeholder element/attribute names. -->
+<FlowConfiguration>
+  <Processes>
+    <Process Name="Add Key (sample)">
+      <ChildStep>
+        <EcuService Ecu="IMMO">
+          <Request Service="0x10" Sub="0x03"/>
+          <ChildStep>
+            <If Description="null"><Condition><OneCondition>
+              <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+              <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+            </OneCondition></Condition></If>
+          </ChildStep>
+        </EcuService>
+      </ChildStep>
+      <SecurityAccess Ecu="IMMO" SeedSub="0x01" KeySub="0x02"/>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x22"><Data IsVariable="false" Value="F18C"/></Request>
+        <ChildStep><Assign Var="keyCountBefore" From="response[3..4]"/></ChildStep>
+      </EcuService>
+      <UserPrompt Message="Insert new key, ignition ON" Timeout="0"/>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x31" Sub="0x01"><Data IsVariable="false" Value="0201"/></Request>
+        <ChildStep>
+          <If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If>
+          <If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="3"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If>
+        </ChildStep>
+      </EcuService>
+      <EcuService Ecu="IMMO">
+        <Request Service="0x22"><Data IsVariable="false" Value="F18C"/></Request>
+        <ChildStep><Assign Var="keyCountAfter" From="response[3..4]"/></ChildStep>
+      </EcuService>
+    </Process>
+  </Processes>
+</FlowConfiguration>

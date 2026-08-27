@@ -1,0 +1,23 @@
+<!-- Illustrative flow (reconstructed request-side names). ECU hard reset via UDS 0x11. -->
+<FlowConfiguration>
+  <Processes>
+    <Process Name="ECU Reset" Description="Hard-reset the selected ECU (0x11 01)">
+      <ChildStep>
+        <EcuService Ecu="EMS">
+          <Request Service="0x10" Sub="0x03"/>
+          <ChildStep><If Description="null"><Condition><OneCondition>
+            <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+            <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+          </OneCondition></Condition></If></ChildStep>
+        </EcuService>
+      </ChildStep>
+      <EcuService Ecu="EMS">
+        <Request Service="0x11" Sub="0x01"/>
+        <ChildStep><If Description="null"><Condition><OneCondition>
+          <LeftValue IsVariable="true" Value="ResponseStatus"/><OpSign Value="Equal"/>
+          <RightValue IsVariable="false" Value="2"/><ConnectSign Value="OR"/>
+        </OneCondition></Condition></If></ChildStep>
+      </EcuService>
+    </Process>
+  </Processes>
+</FlowConfiguration>

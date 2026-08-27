@@ -1,0 +1,21 @@
+{
+  "Name": "dtc_read_clear_readback_EMS",
+  "Exchanges": [
+    {
+      "Req": "1902FF",
+      "Resp": "5902FF03010008C1230004"
+    },
+    {
+      "Req": "1003",
+      "Resp": "5003"
+    },
+    {
+      "Req": "14FFFFFF",
+      "Resp": "54"
+    },
+    {
+      "Req": "1902FF",
+      "Resp": "5902FF03010008"
+    }
+  ]
+}

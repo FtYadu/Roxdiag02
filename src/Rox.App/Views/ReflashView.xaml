@@ -1,0 +1,43 @@
+<UserControl x:Class="Rox.App.Views.ReflashView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <TextBlock Grid.Row="0" Text="MCU Reflash" FontSize="24" FontWeight="Bold" Margin="0,0,0,12" />
+
+    <WrapPanel Grid.Row="1" Margin="0,0,0,12">
+      <TextBlock Text="Target ECU:" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <ComboBox Width="150" ItemsSource="{Binding Ecus}" SelectedItem="{Binding SelectedEcu}" Margin="0,0,12,0" />
+      <Button Content="Select firmware…" Command="{Binding BrowseFirmwareCommand}" Margin="0,0,8,0" />
+      <Button Content="Reflash" Command="{Binding ReflashCommand}" />
+    </WrapPanel>
+
+    <TextBlock Grid.Row="2" Text="{Binding FirmwarePath}" Opacity="0.7" TextTrimming="CharacterEllipsis" Margin="0,0,0,8" />
+
+    <Grid Grid.Row="3" Margin="0,0,0,12">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <ProgressBar Grid.Column="0" Height="10" Minimum="0" Maximum="100" Value="{Binding Progress}" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="1" Text="{Binding Throughput}" Margin="12,0" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="2" Text="{Binding Eta}" VerticalAlignment="Center" />
+    </Grid>
+
+    <Border Grid.Row="4" CornerRadius="6" Padding="8" Background="{DynamicResource ControlFillColorDefaultBrush}">
+      <ListBox ItemsSource="{Binding Log}" FontFamily="Cascadia Mono,Consolas" FontSize="12"
+               Background="Transparent" BorderThickness="0" />
+    </Border>
+
+    <TextBlock Grid.Row="5" Text="{Binding Status}" Margin="0,10,0,0" Opacity="0.85" TextWrapping="Wrap" />
+  </Grid>
+</UserControl>

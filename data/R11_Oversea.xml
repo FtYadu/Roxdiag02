@@ -1,0 +1,17 @@
+<ETSData>
+  <Vehicle Name="R11_Oversea" Des="" Pic="" TiName="R11">
+    <Buses>
+      <Bus>
+        <HPin>6</HPin><LPin>14</LPin>
+        <BusType>CANBUS</BusType><Name>CANBUS</Name>
+        <Baudrate>500000</Baudrate><IsUse>True</IsUse><NetworkType>0</NetworkType>
+      </Bus>
+      <Bus>
+        <RHPin>3</RHPin><RLPin>11</RLPin><THPin>12</THPin><TLPin>13</TLPin><APin>8</APin>
+        <ProtocolVersion>1</ProtocolVersion><IPVersion>IPv4</IPVersion>
+        <BusType>Ethernet</BusType><Name>Ethernet</Name>
+        <Baudrate>0</Baudrate><IsUse>True</IsUse><NetworkType>10</NetworkType>
+      </Bus>
+    </Buses>
+  </Vehicle>
+</ETSData>

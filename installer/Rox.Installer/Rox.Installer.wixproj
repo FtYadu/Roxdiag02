@@ -1,0 +1,13 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputName>ROXDiagnostic</OutputName>
+    <OutputType>Package</OutputType>
+    <!-- Path to the self-contained publish output; overridable from CI:
+         dotnet build installer/Rox.Installer/Rox.Installer.wixproj -c Release -p:PublishDir=... -->
+    <PublishDir Condition="'$(PublishDir)'==''">$(MSBuildThisFileDirectory)..\..\src\Rox.App\bin\Release\net8.0-windows\win-x64\publish</PublishDir>
+    <DefineConstants>PublishDir=$(PublishDir)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+</Project>
